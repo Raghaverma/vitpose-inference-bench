@@ -1,0 +1,32 @@
+{
+  "model": "ViTPose++-L",
+  "backend": "PyTorch",
+  "precision": "FP16",
+  "device": "NVIDIA L4",
+  "iterations": 100,
+  "warmup_iterations": 10,
+  "batch_size": 1,
+  "mean_latency_ms": 20.691,
+  "p50_latency_ms": 20.583,
+  "p95_latency_ms": 21.217,
+  "p99_latency_ms": 21.703,
+  "min_latency_ms": 20.387,
+  "max_latency_ms": 23.29,
+  "throughput_fps": 48.33,
+  "peak_vram_mb": 918.7,
+  "checkpoint": "/home/ubuntu/TensorRT/checkpoints/vitpose-plus-large",
+  "checkpoint_sha256": "8b249f74fca7c90b94adb1ebcdbb32cb424fb4fb3c8c40f54a050ccce972643f",
+  "image": "samples/sample.jpg",
+  "env": {
+    "gpu": "NVIDIA L4",
+    "nvidia_driver": "595.84",
+    "cuda_runtime": "13.0",
+    "cudnn": 92400,
+    "python": "3.12.3",
+    "torch": "2.14.0+cu130",
+    "transformers": "5.17.0",
+    "ultralytics": "8.4.155",
+    "opencv": "5.0.0",
+    "numpy": "2.5.3"
+  }
+}

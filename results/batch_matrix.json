@@ -1,0 +1,160 @@
+{
+  "note": "Every backend measured with GENUINELY DISTINCT crops per batch slot (golden/build_distinct_batch.py), never .repeat() -- see backends/pytorch.py, backends/onnxruntime.py, backends/tensorrt.py. Each cell was gated on a per-slot cross-slot-correctness check before being recorded here.",
+  "cells": [
+    {
+      "batch": 1,
+      "pytorch": {
+        "mean_ms": 21.094272411428392,
+        "fps": 47.40623333650622,
+        "p50_ms": 21.02989301783964,
+        "p95_ms": 21.352390060201287,
+        "p99_ms": 21.549463970586658,
+        "peak_vram_mb": 851.84619140625
+      },
+      "onnxruntime": {
+        "mean_ms": 10.312411099439487,
+        "fps": 96.97053291973138,
+        "p50_ms": 10.282095987349749,
+        "p95_ms": 10.54196699988097,
+        "p99_ms": 10.5600570095703,
+        "device_vram_mb": 3007.125
+      },
+      "tensorrt": {
+        "mean_ms": 5.061435988172889,
+        "fps": 197.5723890091094,
+        "p50_ms": 5.060563504230231,
+        "p95_ms": 5.082120071165264,
+        "p99_ms": 5.085908924229443,
+        "device_vram_mb": 2849.125,
+        "engine_file_size_mb": 833.3791847229004,
+        "activation_workspace_mb": 4.9697265625
+      },
+      "tensorrt_speedup_vs_pytorch": 4.167645794734854,
+      "tensorrt_speedup_vs_ort": 2.037447697360316
+    },
+    {
+      "batch": 2,
+      "pytorch": {
+        "mean_ms": 21.722399010322988,
+        "fps": 92.07086192687804,
+        "p50_ms": 21.57909399829805,
+        "p95_ms": 22.021329030394554,
+        "p99_ms": 25.08831606246531,
+        "peak_vram_mb": 865.62744140625
+      },
+      "onnxruntime": {
+        "mean_ms": 14.199292104458436,
+        "fps": 140.85209215267992,
+        "p50_ms": 14.083747984841466,
+        "p95_ms": 14.750547939911485,
+        "p99_ms": 14.896380016580224,
+        "device_vram_mb": 3009.125
+      },
+      "tensorrt": {
+        "mean_ms": 7.477884859545156,
+        "fps": 267.4553082275795,
+        "p50_ms": 7.403634022921324,
+        "p95_ms": 7.868739077821374,
+        "p99_ms": 7.88626994471997,
+        "device_vram_mb": 2853.125,
+        "engine_file_size_mb": 835.5702857971191,
+        "activation_workspace_mb": 8.43994140625
+      },
+      "tensorrt_speedup_vs_pytorch": 2.9048854613742017,
+      "tensorrt_speedup_vs_ort": 1.8988380232056836
+    },
+    {
+      "batch": 4,
+      "pytorch": {
+        "mean_ms": 21.23101680772379,
+        "fps": 188.40360008310154,
+        "p50_ms": 21.169370971620083,
+        "p95_ms": 21.518997964449227,
+        "p99_ms": 21.9466770067811,
+        "peak_vram_mb": 893.81494140625
+      },
+      "onnxruntime": {
+        "mean_ms": 23.7757063168101,
+        "fps": 168.23895562555322,
+        "p50_ms": 23.672604467719793,
+        "p95_ms": 24.666721001267433,
+        "p99_ms": 24.68828100245446,
+        "device_vram_mb": 4037.125
+      },
+      "tensorrt": {
+        "mean_ms": 13.551138036418706,
+        "fps": 295.17816062754235,
+        "p50_ms": 13.368617510423064,
+        "p95_ms": 14.019891968928277,
+        "p99_ms": 14.084313064813614,
+        "device_vram_mb": 2879.125,
+        "engine_file_size_mb": 832.2477531433105,
+        "activation_workspace_mb": 19.5009765625
+      },
+      "tensorrt_speedup_vs_pytorch": 1.5667331223890861,
+      "tensorrt_speedup_vs_ort": 1.7545173145541615
+    },
+    {
+      "batch": 8,
+      "pytorch": {
+        "mean_ms": 35.51255410769954,
+        "fps": 225.27244804015675,
+        "p50_ms": 35.66192404832691,
+        "p95_ms": 36.30904806777835,
+        "p99_ms": 36.64548497181386,
+        "peak_vram_mb": 948.18994140625
+      },
+      "onnxruntime": {
+        "mean_ms": 42.809177901363,
+        "fps": 186.87581477114253,
+        "p50_ms": 42.73016646038741,
+        "p95_ms": 43.86450699530542,
+        "p99_ms": 44.23169500660151,
+        "device_vram_mb": 4039.125
+      },
+      "tensorrt": {
+        "mean_ms": 27.567677575862035,
+        "fps": 290.19492040942595,
+        "p50_ms": 27.781167475041002,
+        "p95_ms": 27.863890049047768,
+        "p99_ms": 28.1033250503242,
+        "device_vram_mb": 2897.125,
+        "engine_file_size_mb": 835.463794708252,
+        "activation_workspace_mb": 33.7509765625
+      },
+      "tensorrt_speedup_vs_pytorch": 1.2881953516024127,
+      "tensorrt_speedup_vs_ort": 1.552875746734874
+    },
+    {
+      "batch": 16,
+      "pytorch": {
+        "mean_ms": 68.80298280739225,
+        "fps": 232.54805746998727,
+        "p50_ms": 68.74617451103404,
+        "p95_ms": 69.94836498051882,
+        "p99_ms": 70.12646901421249,
+        "peak_vram_mb": 1057.68994140625
+      },
+      "onnxruntime": {
+        "mean_ms": 92.40362512529828,
+        "fps": 173.15337984093352,
+        "p50_ms": 92.1377504710108,
+        "p95_ms": 94.22899107448757,
+        "p99_ms": 94.6682799840346,
+        "device_vram_mb": 4047.125
+      },
+      "tensorrt": {
+        "mean_ms": 51.477735242806375,
+        "fps": 310.81398442515746,
+        "p50_ms": 51.222621521446854,
+        "p95_ms": 53.01380006130785,
+        "p99_ms": 53.12295292969793,
+        "device_vram_mb": 2949.125,
+        "engine_file_size_mb": 835.4576301574707,
+        "activation_workspace_mb": 67.5009765625
+      },
+      "tensorrt_speedup_vs_pytorch": 1.3365580766688245,
+      "tensorrt_speedup_vs_ort": 1.7950211812826593
+    }
+  ]
+}

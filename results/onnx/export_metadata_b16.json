@@ -1,0 +1,179 @@
+{
+  "onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l_b16.onnx",
+  "onnx_sha256": "2128cec160ddc35bb7b8af36d822c51f9084df926c8927991c483eb2dbe0d1a4",
+  "output_name": "heatmaps",
+  "opset_version": 18,
+  "optimize": false,
+  "batch_axis": "static",
+  "dynamic_batch_export_attempted": false,
+  "dynamic_batch_export_error": "skipped for batch>1 -- already documented as failing (see batch=1 export)",
+  "dynamic_axes": null,
+  "static_spatial_shape": [
+    256,
+    192
+  ],
+  "static_batch_size": 16,
+  "max_batch": 16,
+  "per_slot_dataset_index": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    0,
+    1,
+    2,
+    3
+  ],
+  "distinct_crops_used": true,
+  "checkpoint": "/home/ubuntu/TensorRT/checkpoints/vitpose-plus-large",
+  "golden_env": {
+    "python": "3.12.3",
+    "torch": "2.14.0+cu130",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "transformers": "5.17.0",
+    "ultralytics": "8.4.155",
+    "gpu_name": "NVIDIA L4",
+    "nvidia_driver": "595.84",
+    "num_slots": 16,
+    "num_experts": 6,
+    "slots": [
+      {
+        "slot": 0,
+        "dataset_index": 0,
+        "is_real_crop": true,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 1,
+        "dataset_index": 1,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 2,
+        "dataset_index": 2,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 3,
+        "dataset_index": 3,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 4,
+        "dataset_index": 4,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 5,
+        "dataset_index": 5,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 6,
+        "dataset_index": 0,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 7,
+        "dataset_index": 1,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 8,
+        "dataset_index": 2,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 9,
+        "dataset_index": 3,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 10,
+        "dataset_index": 4,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 11,
+        "dataset_index": 5,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 12,
+        "dataset_index": 0,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 13,
+        "dataset_index": 1,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 14,
+        "dataset_index": 2,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      },
+      {
+        "slot": 15,
+        "dataset_index": 3,
+        "is_real_crop": false,
+        "verified_bit_identical_runs": 5
+      }
+    ],
+    "crops_shape": [
+      16,
+      3,
+      256,
+      192
+    ],
+    "outputs_shape": [
+      16,
+      17,
+      64,
+      48
+    ]
+  },
+  "immediate_sanity_max_abs_err": 0.004150390625,
+  "exporter": {
+    "class": "transformers.exporters.OnnxExporter",
+    "not_independent_of": "torch.export -> torch.onnx.export (see module docstring)",
+    "tested_versions": {
+      "torch": "2.12.0",
+      "onnx": "1.21.0",
+      "onnxscript": "0.7.0"
+    },
+    "min_versions": {
+      "torch": "2.11.0"
+    }
+  },
+  "installed_versions": {
+    "python": "3.12.3",
+    "torch": "2.14.0+cu130",
+    "transformers": "5.17.0",
+    "onnx": "1.22.0",
+    "onnxscript": "0.7.2"
+  }
+}

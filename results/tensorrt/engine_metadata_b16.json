@@ -1,0 +1,44 @@
+{
+  "model": "ViTPose++-L",
+  "source": "vitpose_plus_l_b16.onnx",
+  "onnx_sha256": "2128cec160ddc35bb7b8af36d822c51f9084df926c8927991c483eb2dbe0d1a4",
+  "engine_path": "/home/ubuntu/TensorRT/engines/vitpose_b16_fp16.engine",
+  "engine_sha256": "adeb53229e38edf9d1e8b6e5d39fcdcddc8ca8f264ba7559c7fc3e716fe9318a",
+  "precision_requested": "FP16 (strongly-typed network, graph-declared dtypes)",
+  "mode": "tuned",
+  "benchmarkable": true,
+  "batch": 16,
+  "input_shape": [
+    16,
+    3,
+    256,
+    192
+  ],
+  "opset": 18,
+  "build_wall_clock_s": 38.92805310199037,
+  "builder_optimization_level": 3,
+  "vram": {
+    "engine_file_size_mb": 835.4576301574707,
+    "activation_workspace_mb": 67.5009765625,
+    "build_phase_vram_delta_mb": 366.0,
+    "note": "three physically distinct figures -- weights (~batch-invariant), the activation workspace this batch size needs, and build-time-only transient scratch. None of these three is the same thing as backends/tensorrt.py's steady-state 'device_vram_mb' inference measurement, which also includes the CUDA context's own fixed tax."
+  },
+  "precision_audit": {
+    "total_layers": 205,
+    "layer_precision_histogram": {
+      "Half": 180,
+      "Float+Half": 24,
+      "Float": 1
+    },
+    "fp16_layers": 180,
+    "fraction_fp16": 0.8780487804878049
+  },
+  "env": {
+    "python": "3.12.3",
+    "tensorrt_version": "11.3.0.99",
+    "torch": "2.14.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu_name": "NVIDIA L4",
+    "compute_capability": "8.9"
+  }
+}

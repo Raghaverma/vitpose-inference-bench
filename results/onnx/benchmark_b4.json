@@ -1,0 +1,39 @@
+{
+  "backend": "ONNX Runtime",
+  "onnxruntime_version": "1.30.0",
+  "precision": "FP16",
+  "onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l_b4.onnx",
+  "runs": {
+    "unoptimized_graph": {
+      "num_iters": 100,
+      "batch_size": 4,
+      "mean_ms": 31.59781618276611,
+      "std_ms": 0.2661308663975694,
+      "p50_ms": 31.56362898880616,
+      "p95_ms": 32.04279998317361,
+      "p99_ms": 32.3757859878242,
+      "min_ms": 31.02004691027105,
+      "max_ms": 32.4186070356518,
+      "fps": 126.59102695146558,
+      "device_vram_mb": 4035.125,
+      "vram_measurement_method": "cuda.mem_get_info snapshot after warmup, not a true peak -- see comment",
+      "execution_provider": "CUDAExecutionProvider"
+    },
+    "ort_default_optimizations": {
+      "num_iters": 100,
+      "batch_size": 4,
+      "mean_ms": 23.7757063168101,
+      "std_ms": 0.4387291791964982,
+      "p50_ms": 23.672604467719793,
+      "p95_ms": 24.666721001267433,
+      "p99_ms": 24.68828100245446,
+      "min_ms": 23.059336002916098,
+      "max_ms": 24.68965097796172,
+      "fps": 168.23895562555322,
+      "device_vram_mb": 4037.125,
+      "vram_measurement_method": "cuda.mem_get_info snapshot after warmup, not a true peak -- see comment",
+      "execution_provider": "CUDAExecutionProvider"
+    }
+  },
+  "pytorch_baseline": null
+}

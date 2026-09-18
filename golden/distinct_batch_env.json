@@ -1,0 +1,122 @@
+{
+  "python": "3.12.3",
+  "torch": "2.14.0+cu130",
+  "torch_cuda": "13.0",
+  "cudnn": 92400,
+  "transformers": "5.17.0",
+  "ultralytics": "8.4.155",
+  "gpu_name": "NVIDIA L4",
+  "nvidia_driver": "595.84",
+  "num_slots": 16,
+  "num_experts": 6,
+  "slots": [
+    {
+      "slot": 0,
+      "dataset_index": 0,
+      "is_real_crop": true,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 1,
+      "dataset_index": 1,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 2,
+      "dataset_index": 2,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 3,
+      "dataset_index": 3,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 4,
+      "dataset_index": 4,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 5,
+      "dataset_index": 5,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 6,
+      "dataset_index": 0,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 7,
+      "dataset_index": 1,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 8,
+      "dataset_index": 2,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 9,
+      "dataset_index": 3,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 10,
+      "dataset_index": 4,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 11,
+      "dataset_index": 5,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 12,
+      "dataset_index": 0,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 13,
+      "dataset_index": 1,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 14,
+      "dataset_index": 2,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    },
+    {
+      "slot": 15,
+      "dataset_index": 3,
+      "is_real_crop": false,
+      "verified_bit_identical_runs": 5
+    }
+  ],
+  "crops_shape": [
+    16,
+    3,
+    256,
+    192
+  ],
+  "outputs_shape": [
+    16,
+    17,
+    64,
+    48
+  ]
+}

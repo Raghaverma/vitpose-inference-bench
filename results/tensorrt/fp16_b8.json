@@ -1,0 +1,62 @@
+{
+  "backend": "TensorRT",
+  "precision": "FP16 (strongly-typed network, graph-declared dtypes)",
+  "engine_metadata": {
+    "model": "ViTPose++-L",
+    "source": "vitpose_plus_l_b8.onnx",
+    "onnx_sha256": "64ea5b87afb77203903bcbf8fb3f46400fa4d7cb27ad1c1f80e40e626c6bfe30",
+    "engine_path": "/home/ubuntu/TensorRT/engines/vitpose_b8_fp16.engine",
+    "engine_sha256": "efcb307e21aec36398ad565e686b569ddee238155736baf6e4079498ce351589",
+    "precision_requested": "FP16 (strongly-typed network, graph-declared dtypes)",
+    "mode": "tuned",
+    "benchmarkable": true,
+    "batch": 8,
+    "input_shape": [
+      8,
+      3,
+      256,
+      192
+    ],
+    "opset": 18,
+    "build_wall_clock_s": 37.322360672056675,
+    "builder_optimization_level": 3,
+    "vram": {
+      "engine_file_size_mb": 835.463794708252,
+      "activation_workspace_mb": 33.7509765625,
+      "build_phase_vram_delta_mb": 366.0,
+      "note": "three physically distinct figures -- weights (~batch-invariant), the activation workspace this batch size needs, and build-time-only transient scratch. None of these three is the same thing as backends/tensorrt.py's steady-state 'device_vram_mb' inference measurement, which also includes the CUDA context's own fixed tax."
+    },
+    "precision_audit": {
+      "total_layers": 204,
+      "layer_precision_histogram": {
+        "Half": 179,
+        "Float+Half": 24,
+        "Float": 1
+      },
+      "fp16_layers": 179,
+      "fraction_fp16": 0.8774509803921569
+    },
+    "env": {
+      "python": "3.12.3",
+      "tensorrt_version": "11.3.0.99",
+      "torch": "2.14.0+cu130",
+      "cuda_runtime": "13.0",
+      "gpu_name": "NVIDIA L4",
+      "compute_capability": "8.9"
+    }
+  },
+  "benchmark": {
+    "num_iters": 100,
+    "batch_size": 8,
+    "mean_ms": 27.567677575862035,
+    "std_ms": 0.4664896822439107,
+    "p50_ms": 27.781167475041002,
+    "p95_ms": 27.863890049047768,
+    "p99_ms": 28.1033250503242,
+    "min_ms": 26.064220000989735,
+    "max_ms": 28.15456606913358,
+    "fps": 290.19492040942595,
+    "device_vram_mb": 2897.125,
+    "vram_measurement_method": "cuda.mem_get_info snapshot after warmup, not a true peak"
+  }
+}

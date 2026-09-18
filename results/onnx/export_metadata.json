@@ -1,0 +1,72 @@
+{
+  "onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l.onnx",
+  "onnx_sha256": "097a1f4c9d63523764c65f91f67bf210eba582a0c119e2e861bf6bd9d6f328af",
+  "output_name": "heatmaps",
+  "opset_version": 18,
+  "optimize": false,
+  "batch_axis": "static",
+  "dynamic_batch_export_attempted": true,
+  "dynamic_batch_export_error": "Constraints violated (batch)! For more information, run with TORCH_LOGS=\"+dynamic\".",
+  "dynamic_axes": null,
+  "static_spatial_shape": [
+    256,
+    192
+  ],
+  "static_batch_size": 1,
+  "max_batch": 1,
+  "per_slot_dataset_index": [
+    0
+  ],
+  "distinct_crops_used": false,
+  "checkpoint": "/home/ubuntu/TensorRT/checkpoints/vitpose-plus-large",
+  "golden_env": {
+    "python": "3.12.3",
+    "torch": "2.14.0+cu130",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "transformers": "5.17.0",
+    "ultralytics": "8.4.155",
+    "gpu_name": "NVIDIA L4",
+    "nvidia_driver": "595.84",
+    "golden_runs_verified_bit_identical": 5,
+    "input_shape": [
+      1,
+      3,
+      256,
+      192
+    ],
+    "output_shape": [
+      1,
+      17,
+      64,
+      48
+    ],
+    "output_dtype": "torch.float16",
+    "box_xywh": [
+      430.82086181640625,
+      164.86526489257812,
+      395.2178955078125,
+      140.6436767578125
+    ]
+  },
+  "immediate_sanity_max_abs_err": 0.0009765625,
+  "exporter": {
+    "class": "transformers.exporters.OnnxExporter",
+    "not_independent_of": "torch.export -> torch.onnx.export (see module docstring)",
+    "tested_versions": {
+      "torch": "2.12.0",
+      "onnx": "1.21.0",
+      "onnxscript": "0.7.0"
+    },
+    "min_versions": {
+      "torch": "2.11.0"
+    }
+  },
+  "installed_versions": {
+    "python": "3.12.3",
+    "torch": "2.14.0+cu130",
+    "transformers": "5.17.0",
+    "onnx": "1.22.0",
+    "onnxscript": "0.7.2"
+  }
+}

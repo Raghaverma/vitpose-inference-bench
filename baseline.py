@@ -84,8 +84,10 @@ def load_pose_model(checkpoint: str, device: str, dtype: torch.dtype):
 
 
 def detect_person_box(detector: YOLO, image_bgr: np.ndarray, conf: float,
-                       device: str) -> np.ndarray:
-    """Largest-area person box in the image, as a single-row (1, 4) xywh array."""
+                       device: str) -> tuple[np.ndarray, dict]:
+    """Largest-area person box in the image, as a single-row (1, 4) xywh array,
+    plus ultralytics' own per-call timing breakdown (ms) -- reused as-is for the
+    Stage 1 YOLO-stage timing instead of hand-timing the detector separately."""
     result = detector(image_bgr, verbose=False, conf=conf, classes=[0], device=device)[0]
     boxes = result.boxes
     if boxes is None or len(boxes) == 0:
@@ -94,7 +96,8 @@ def detect_person_box(detector: YOLO, image_bgr: np.ndarray, conf: float,
     xyxy = boxes.xyxy.cpu().numpy()
     areas = (xyxy[:, 2] - xyxy[:, 0]) * (xyxy[:, 3] - xyxy[:, 1])
     x1, y1, x2, y2 = xyxy[areas.argmax()]
-    return np.array([[x1, y1, x2 - x1, y2 - y1]], dtype=np.float32)
+    box = np.array([[x1, y1, x2 - x1, y2 - y1]], dtype=np.float32)
+    return box, dict(result.speed)
 
 
 @torch.no_grad()
@@ -107,11 +110,15 @@ def run_pose(processor, model, image_rgb: np.ndarray, boxes: np.ndarray, device:
         kwargs["dataset_index"] = torch.full((pixel_values.shape[0],), dataset_index,
                                               dtype=torch.long, device=device)
     outputs = model(pixel_values=pixel_values, **kwargs)
-    # DARK decode (post_process_pose_estimation) runs a scipy gaussian_filter
-    # that rejects fp16 arrays.
+    # Keep the model's raw-dtype heatmaps around (pre-decode, pre-float-cast) --
+    # this is what Stage 1's golden numerical reference diffs future ONNX/
+    # TensorRT backends against. post_process_pose_estimation below needs fp32
+    # (its DARK decode runs a scipy gaussian_filter that rejects fp16 arrays),
+    # so cast a copy for decoding rather than mutating outputs.heatmaps in place.
+    raw_heatmaps = outputs.heatmaps.detach().clone()
     outputs.heatmaps = outputs.heatmaps.float()
     poses = processor.post_process_pose_estimation(outputs, boxes=[boxes])[0]
-    return poses, pixel_values
+    return poses, pixel_values, raw_heatmaps
 
 
 def verify_output(poses: list[dict], image_shape: tuple[int, int]) -> None:
@@ -159,6 +166,50 @@ def draw_pose(image_bgr: np.ndarray, poses: list[dict], out_path: Path,
     print(f"[baseline] wrote annotated image to {out_path}")
 
 
+def time_calls(call_fn, batch_size: int, device: str, num_iters: int, warmup: int) -> dict:
+    """Sync-bracketed wall-clock timing of a zero-arg callable. Shared by every
+    backend's benchmark (PyTorch here, ONNX Runtime in backends/onnxruntime.py)
+    so "PyTorch vs ONNX Runtime" numbers come from one timing methodology, not
+    two similar-looking ones. The sync-before/perf_counter/call/sync-after/
+    perf_counter pattern (not raw CUDA events) is deliberate: session.run()
+    already forces a device sync before returning control to Python, so a
+    matching sync around the PyTorch call gives both backends an identical,
+    already-validated sync boundary (Stage 1 measured this harness's own noise
+    floor at 0.018ms, negligible next to ~20ms inference calls) without the
+    stream-identity assumptions raw CUDA events would need across two backends
+    that don't necessarily share a CUDA stream.
+    """
+    for _ in range(warmup):
+        call_fn()
+    if device.startswith("cuda"):
+        torch.cuda.synchronize()
+
+    latencies_ms = []
+    for _ in range(num_iters):
+        if device.startswith("cuda"):
+            torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        call_fn()
+        if device.startswith("cuda"):
+            torch.cuda.synchronize()
+        latencies_ms.append((time.perf_counter() - t0) * 1000)
+
+    mean = statistics.mean(latencies_ms)
+    sorted_latencies = sorted(latencies_ms)
+    return {
+        "num_iters": num_iters,
+        "batch_size": batch_size,
+        "mean_ms": mean,
+        "std_ms": statistics.pstdev(latencies_ms),
+        "p50_ms": statistics.median(latencies_ms),
+        "p95_ms": sorted_latencies[max(0, int(0.95 * num_iters) - 1)],
+        "p99_ms": sorted_latencies[max(0, int(0.99 * num_iters) - 1)],
+        "min_ms": sorted_latencies[0],
+        "max_ms": sorted_latencies[-1],
+        "fps": 1000.0 / mean * batch_size,
+    }
+
+
 @torch.no_grad()
 def benchmark(model, pixel_values: torch.Tensor, dataset_index: int | None, device: str,
               num_iters: int, warmup: int) -> dict:
@@ -166,35 +217,20 @@ def benchmark(model, pixel_values: torch.Tensor, dataset_index: int | None, devi
     if dataset_index is not None:
         kwargs["dataset_index"] = torch.full((pixel_values.shape[0],), dataset_index,
                                               dtype=torch.long, device=device)
-    for _ in range(warmup):
-        model(pixel_values=pixel_values, **kwargs)
+    call_fn = lambda: model(pixel_values=pixel_values, **kwargs)
     if device.startswith("cuda"):
+        # Warm up before resetting so the reset baseline excludes one-time
+        # allocator/cuDNN-algo-search cost, matching time_calls()'s own warmup.
+        for _ in range(warmup):
+            call_fn()
         torch.cuda.synchronize()
         torch.cuda.reset_peak_memory_stats(device)
 
-    latencies_ms = []
-    for _ in range(num_iters):
-        if device.startswith("cuda"):
-            torch.cuda.synchronize()
-        t0 = time.perf_counter()
-        model(pixel_values=pixel_values, **kwargs)
-        if device.startswith("cuda"):
-            torch.cuda.synchronize()
-        latencies_ms.append((time.perf_counter() - t0) * 1000)
-
-    mean = statistics.mean(latencies_ms)
-    batch_size = int(pixel_values.shape[0])
-    return {
-        "num_iters": num_iters,
-        "batch_size": batch_size,
-        "mean_ms": mean,
-        "std_ms": statistics.pstdev(latencies_ms),
-        "p50_ms": statistics.median(latencies_ms),
-        "p95_ms": sorted(latencies_ms)[max(0, int(0.95 * num_iters) - 1)],
-        "fps": 1000.0 / mean * batch_size,
-        "peak_vram_mb": (torch.cuda.max_memory_allocated(device) / 2**20
-                          if device.startswith("cuda") else None),
-    }
+    stats = time_calls(call_fn, int(pixel_values.shape[0]), device, num_iters,
+                        warmup=0 if device.startswith("cuda") else warmup)
+    stats["peak_vram_mb"] = (torch.cuda.max_memory_allocated(device) / 2**20
+                              if device.startswith("cuda") else None)
+    return stats
 
 
 def main() -> None:
@@ -223,11 +259,11 @@ def main() -> None:
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     h, w = image_bgr.shape[:2]
 
-    box = detect_person_box(detector, image_bgr, args.det_conf, device)
+    box, detector_speed = detect_person_box(detector, image_bgr, args.det_conf, device)
     print(f"[baseline] detected person box (xywh): {box[0].round(1).tolist()}")
 
-    poses, pixel_values = run_pose(processor, model, image_rgb, box, device, dtype,
-                                    dataset_index)
+    poses, pixel_values, _raw_heatmaps = run_pose(processor, model, image_rgb, box, device,
+                                                   dtype, dataset_index)
     verify_output(poses, (h, w))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -241,6 +277,7 @@ def main() -> None:
         "box_xywh": box[0].tolist(),
         "keypoints": poses[0]["keypoints"].cpu().tolist(),
         "scores": poses[0]["scores"].cpu().reshape(-1).tolist(),
+        "detector_speed_ms": detector_speed,
     }
 
     if not args.skip_benchmark:

@@ -1,0 +1,45 @@
+{
+  "backend": "ONNX Runtime",
+  "onnxruntime_version": "1.30.0",
+  "precision": "FP16",
+  "onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l.onnx",
+  "runs": {
+    "unoptimized_graph": {
+      "num_iters": 100,
+      "batch_size": 1,
+      "mean_ms": 18.41154370456934,
+      "std_ms": 0.16557098929000028,
+      "p50_ms": 18.38360499823466,
+      "p95_ms": 18.70870206039399,
+      "p99_ms": 18.752092961221933,
+      "min_ms": 18.124119960702956,
+      "max_ms": 18.76611402258277,
+      "fps": 54.313750983945035,
+      "device_vram_mb": 4031.125,
+      "vram_measurement_method": "cuda.mem_get_info snapshot after warmup, not a true peak -- see comment",
+      "execution_provider": "CUDAExecutionProvider",
+      "mean_latency_speedup_vs_pytorch": 1.1238058216088067
+    },
+    "ort_default_optimizations": {
+      "num_iters": 100,
+      "batch_size": 1,
+      "mean_ms": 10.312411099439487,
+      "std_ms": 0.15152441848484097,
+      "p50_ms": 10.282095987349749,
+      "p95_ms": 10.54196699988097,
+      "p99_ms": 10.5600570095703,
+      "min_ms": 10.108667076565325,
+      "max_ms": 10.616409010253847,
+      "fps": 96.97053291973138,
+      "device_vram_mb": 3007.125,
+      "vram_measurement_method": "cuda.mem_get_info snapshot after warmup, not a true peak -- see comment",
+      "execution_provider": "CUDAExecutionProvider",
+      "mean_latency_speedup_vs_pytorch": 2.006417296642162
+    }
+  },
+  "pytorch_baseline": {
+    "mean_latency_ms": 20.691,
+    "throughput_fps": 48.33,
+    "peak_vram_mb": 918.7
+  }
+}

@@ -1,6 +1,16 @@
 torch>=2.2
 transformers>=4.44
 ultralytics>=8.3
+scipy
 pillow
 numpy
 opencv-python-headless
+
+# Stage 2 -- ONNX export + ONNX Runtime backend
+onnx
+onnxscript
+onnxruntime-gpu
+pytest
+
+# Stage 3 -- TensorRT backend (FP16)
+tensorrt

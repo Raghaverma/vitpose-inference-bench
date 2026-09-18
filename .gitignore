@@ -2,6 +2,8 @@ checkpoints/
 *.safetensors
 *.engine
 *.onnx
+*.onnx_data
+*.onnx.data
 results/raw/
 samples/
 

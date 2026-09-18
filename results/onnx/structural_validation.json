@@ -1,0 +1,76 @@
+{
+  "onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l.onnx",
+  "checks": {
+    "loads": true,
+    "checker_passed": true
+  },
+  "opset_imports": {
+    "ai.onnx": 18
+  },
+  "ir_version": 10,
+  "inputs": [
+    {
+      "name": "pixel_values",
+      "dtype": "FLOAT16",
+      "shape": [
+        1,
+        3,
+        256,
+        192
+      ]
+    },
+    {
+      "name": "dataset_index",
+      "dtype": "INT64",
+      "shape": [
+        1
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "name": "heatmaps",
+      "dtype": "FLOAT16",
+      "shape": [
+        1,
+        17,
+        64,
+        48
+      ]
+    }
+  ],
+  "operators": {
+    "unique_op_types": 23,
+    "total_nodes": 3418,
+    "histogram": {
+      "Add": 506,
+      "BatchNormalization": 2,
+      "Cast": 222,
+      "CastLike": 72,
+      "Concat": 194,
+      "Constant": 698,
+      "Conv": 2,
+      "ConvTranspose": 2,
+      "Div": 24,
+      "Equal": 144,
+      "Erf": 24,
+      "Expand": 24,
+      "Identity": 1,
+      "LayerNormalization": 49,
+      "MatMul": 336,
+      "Mul": 240,
+      "Relu": 2,
+      "Reshape": 248,
+      "Shape": 48,
+      "Slice": 98,
+      "Softmax": 24,
+      "Sqrt": 48,
+      "Transpose": 410
+    }
+  },
+  "initializers": {
+    "count": 689,
+    "total_size_mb": 828.6,
+    "external_data": true
+  }
+}
