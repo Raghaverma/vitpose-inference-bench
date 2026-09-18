@@ -1,0 +1,1431 @@
+{
+  "model": "ViTPose++-L",
+  "purpose": "TensorRT INT8 entropy calibration corpus (Stage 6 Gate A) -- NOT a validation/accuracy fixture. Do not use for numerical-equivalence testing.",
+  "num_experts": 6,
+  "min_samples_per_expert": 16,
+  "num_samples": 96,
+  "resolution": [
+    256,
+    192
+  ],
+  "content_source": "synthetic_augmentation_of_single_real_crop",
+  "content_source_note": "This repo has exactly one real source photo (samples/sample.jpg, gitignored) reduced to one detected+preprocessed crop (golden/person_crop.npy). No public pose dataset or private footage is integrated yet. This corpus is entirely synthetic augmentation of that one crop, explicitly a first-pass placeholder pending real data (public dataset crops and/or the user's own private sports footage). If/when private footage is added, the raw image/video files MUST be gitignored (follow the existing samples/ and checkpoints/ .gitignore precedent) and this field must be updated to document the real source, sample count, and sampling strategy -- never commit private footage itself.",
+  "source_image_sha256": "68c2972b411e93bfd8b2d4b075c131f767e7f0caab99f12ca29c7ade07f7d3c7",
+  "moe_coverage_policy_note": "TensorRT's EngineInspector (DETAILED profiling verbosity), run against the built engine engines/vitpose_b1_fp16.engine and dumped to results/tensorrt/fp16_layer_info_full.json (180 layers total), shows the backbone MLP's 6-expert MoE routing (VitPoseNaiveMoe.forward in transformers/models/vitpose_backbone/modeling_vitpose_backbone.py: each expert's Linear runs on the full hidden_state unconditionally, then is multiplied by a (dataset_index==i) mask and summed) is COMPLETELY FUSED by builder_optimization_level=3 -- e.g. layer 10 is a 'gemm' layer fusing 7 MatMuls (node_MatMul_92 + all 6 experts' MatMuls) into one kernel, and layer 12 is a 'kgen' layer (__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAdd...) fusing the six per-expert masks and their summation into one opaque kernel, repeating across all 24 transformer blocks. Zero semantic layer names survive (grepping the full dump for Gather/Select/Where/expert-named layers: zero matches). CONCLUSION: per-expert calibration quality is NOT auditable at the tensor level after the engine is built. This manifest's per_expert_counts gate is therefore the ONLY preventive control available before engine build, enforced by calibration/dataset.py (CalibrationDataset recomputes per_expert_counts from this manifest's samples list at every load and refuses -- SystemExit naming the exact expert -- if any count disagrees with this field or falls below min_samples_per_expert; adversarially verified against both an honestly-short manifest and one with a lying cached count). A downstream accuracy check split by dataset_index (Gate C/D, not this corpus-generation step) is the only way to actually catch a badly-calibrated expert.",
+  "augmentation_families": [
+    "classic_photometric_spatial",
+    "motion_blur"
+  ],
+  "per_expert_counts": {
+    "0": 16,
+    "1": 16,
+    "2": 16,
+    "3": 16,
+    "4": 16,
+    "5": 16
+  },
+  "samples": [
+    {
+      "sample_id": 0,
+      "path": "calibration/samples/sample_0000.npy",
+      "dataset_index": 0,
+      "sha256": "7618330ba951b60e19c7900578b3e346aa9a6e4ceac33817618c98c959bea2ff",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2000,
+        "brightness": 0.8657274365425109,
+        "offset": -0.09486303329467774,
+        "shift_h_px": -2,
+        "shift_w_px": 9
+      },
+      "keypoint_shift_px": 25.080479148338284
+    },
+    {
+      "sample_id": 1,
+      "path": "calibration/samples/sample_0001.npy",
+      "dataset_index": 1,
+      "sha256": "3d85234e869867527231cd83f2c05ecacbc9f155f7847d9c7599e257dbe44430",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3001,
+        "angle_deg": 266.76907539367676,
+        "length_px": 8.036958575248718,
+        "kernel_size": 13
+      },
+      "keypoint_shift_px": 10.072823710431766
+    },
+    {
+      "sample_id": 2,
+      "path": "calibration/samples/sample_0002.npy",
+      "dataset_index": 2,
+      "sha256": "a2a81c1d7055fb69d581a019969f9603a300d9285640925e7292d6166f21173a",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2002,
+        "brightness": 1.0166548907756805,
+        "offset": -0.08998544216156007,
+        "shift_h_px": -16,
+        "shift_w_px": 13
+      },
+      "keypoint_shift_px": 54.35547275711343
+    },
+    {
+      "sample_id": 3,
+      "path": "calibration/samples/sample_0003.npy",
+      "dataset_index": 3,
+      "sha256": "c9ab140e41f74fdb63ac21a35e25125dc9c5fda8aea5cb1d7d8a75689dbabc20",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3003,
+        "angle_deg": 286.02733612060547,
+        "length_px": 4.765171051025391,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 7.252663295329752
+    },
+    {
+      "sample_id": 4,
+      "path": "calibration/samples/sample_0004.npy",
+      "dataset_index": 4,
+      "sha256": "07faae565b0920ef142dc4a19011f6b17be88b1e22b6cd7ac9457a179df6c0f4",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2004,
+        "brightness": 0.989068853855133,
+        "offset": -0.08894113302230836,
+        "shift_h_px": -1,
+        "shift_w_px": 3
+      },
+      "keypoint_shift_px": 9.639681713170916
+    },
+    {
+      "sample_id": 5,
+      "path": "calibration/samples/sample_0005.npy",
+      "dataset_index": 5,
+      "sha256": "9724ceab84535c71c6b0cb6c8469e0b4d4f935af6f6397919a1877eae6ee5c70",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3005,
+        "angle_deg": 300.260853767395,
+        "length_px": 8.909427165985107,
+        "kernel_size": 13
+      },
+      "keypoint_shift_px": 342.5786437297845
+    },
+    {
+      "sample_id": 6,
+      "path": "calibration/samples/sample_0006.npy",
+      "dataset_index": 0,
+      "sha256": "a4feb1acf55a9b082339efead654a140f3639427af6a4e884c648e2057bc1774",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2006,
+        "brightness": 1.101443362236023,
+        "offset": -0.03010056018829346,
+        "shift_h_px": -6,
+        "shift_w_px": -11
+      },
+      "keypoint_shift_px": 33.57251399262888
+    },
+    {
+      "sample_id": 7,
+      "path": "calibration/samples/sample_0007.npy",
+      "dataset_index": 1,
+      "sha256": "852d59647306b8b03c5f298dc62b34418d3fb16b7d0230e7698e844a26d5682e",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3007,
+        "angle_deg": 13.756556510925293,
+        "length_px": 7.721497893333435,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 5.167374784660759
+    },
+    {
+      "sample_id": 8,
+      "path": "calibration/samples/sample_0008.npy",
+      "dataset_index": 2,
+      "sha256": "b419cd22a5f880c9b7a770a78ed4fe6f306c5722e23b6bf5a9728811c145eb74",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2008,
+        "brightness": 1.0472162306308745,
+        "offset": 0.0489829421043396,
+        "shift_h_px": 1,
+        "shift_w_px": 15
+      },
+      "keypoint_shift_px": 38.89386426752693
+    },
+    {
+      "sample_id": 9,
+      "path": "calibration/samples/sample_0009.npy",
+      "dataset_index": 3,
+      "sha256": "2d4fe6863c18705c2b6c81531a18fadffebb9016f626ac41a249d5de9071d082",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3009,
+        "angle_deg": 51.54253005981445,
+        "length_px": 4.557476162910461,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 7.601996242988751
+    },
+    {
+      "sample_id": 10,
+      "path": "calibration/samples/sample_0010.npy",
+      "dataset_index": 4,
+      "sha256": "4431f94dae79ab21ccae14b7ffd28b1e0cd067d600fc306129624fcbd8d28c53",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2010,
+        "brightness": 1.1103118896484374,
+        "offset": 0.059085845947265625,
+        "shift_h_px": -7,
+        "shift_w_px": 14
+      },
+      "keypoint_shift_px": 56.59904559335862
+    },
+    {
+      "sample_id": 11,
+      "path": "calibration/samples/sample_0011.npy",
+      "dataset_index": 5,
+      "sha256": "66a72cfc4c9e331d783674e8c28200208fdc32d7c4fcf5c821060b3b4bc3f3b5",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3011,
+        "angle_deg": 142.21149444580078,
+        "length_px": 8.567756295204163,
+        "kernel_size": 13
+      },
+      "keypoint_shift_px": 38.041967728276575
+    },
+    {
+      "sample_id": 12,
+      "path": "calibration/samples/sample_0012.npy",
+      "dataset_index": 0,
+      "sha256": "6ec0959709b784a4a116aa5ae47ce0b36b66de4e4e4d4adda30cebfb93f15506",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2012,
+        "brightness": 0.9264631628990173,
+        "offset": 0.06255979537963867,
+        "shift_h_px": 4,
+        "shift_w_px": 14
+      },
+      "keypoint_shift_px": 39.18302873436799
+    },
+    {
+      "sample_id": 13,
+      "path": "calibration/samples/sample_0013.npy",
+      "dataset_index": 1,
+      "sha256": "4faea4f2f6f51c465e4c82563d5ef6a804f788f332d8becaea85e9905bec5da0",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3013,
+        "angle_deg": 230.61296224594116,
+        "length_px": 5.930022954940796,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 7.133539999742824
+    },
+    {
+      "sample_id": 14,
+      "path": "calibration/samples/sample_0014.npy",
+      "dataset_index": 2,
+      "sha256": "8f8d21301a32d50b332aa19a3cba1d435636a304bb66e765784abe0a99199639",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2014,
+        "brightness": 1.0026358604431151,
+        "offset": 0.0032159090042114258,
+        "shift_h_px": 21,
+        "shift_w_px": -2
+      },
+      "keypoint_shift_px": 53.649550120352025
+    },
+    {
+      "sample_id": 15,
+      "path": "calibration/samples/sample_0015.npy",
+      "dataset_index": 3,
+      "sha256": "97d8b6e84a2ac2cd9c860b9b8329415bb6aff02ef988d2b330ff1e34e1260f59",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3015,
+        "angle_deg": 20.712082386016846,
+        "length_px": 5.319415926933289,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 7.322131293522669
+    },
+    {
+      "sample_id": 16,
+      "path": "calibration/samples/sample_0016.npy",
+      "dataset_index": 4,
+      "sha256": "bc2d3104bfb0aebc64fccbc2ed46f3a2b124ff975528808b357c93fd2acbd81f",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2016,
+        "brightness": 1.0169712126255035,
+        "offset": -0.034024834632873535,
+        "shift_h_px": -13,
+        "shift_w_px": 9
+      },
+      "keypoint_shift_px": 42.16121137487222
+    },
+    {
+      "sample_id": 17,
+      "path": "calibration/samples/sample_0017.npy",
+      "dataset_index": 5,
+      "sha256": "fc45bb023fdcd28d39a7e4e7ce44965ff7cb1646456081bddbd69a0da76d53b0",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3017,
+        "angle_deg": 268.07835817337036,
+        "length_px": 7.772359728813171,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 469.564389383293
+    },
+    {
+      "sample_id": 18,
+      "path": "calibration/samples/sample_0018.npy",
+      "dataset_index": 0,
+      "sha256": "cdabda30be4cc76de8473145710293f7e9e416bb5a546a157d375821b4a4cba4",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2018,
+        "brightness": 1.1144270777702332,
+        "offset": -0.08990967273712158,
+        "shift_h_px": -5,
+        "shift_w_px": 13
+      },
+      "keypoint_shift_px": 36.64993710549435
+    },
+    {
+      "sample_id": 19,
+      "path": "calibration/samples/sample_0019.npy",
+      "dataset_index": 1,
+      "sha256": "4c66600e579382b70b17a3bfef6d055620bb8c190e1c23fc49225cf4f429c0a0",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3019,
+        "angle_deg": 162.65323162078857,
+        "length_px": 5.272093892097473,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 4.947074587398346
+    },
+    {
+      "sample_id": 20,
+      "path": "calibration/samples/sample_0020.npy",
+      "dataset_index": 2,
+      "sha256": "e05b20129f594a59286c30b8c1d155f60f81daaa9e3af60963e08ecd9ab4cef8",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2020,
+        "brightness": 0.9960603713989258,
+        "offset": -0.07895040512084961,
+        "shift_h_px": -3,
+        "shift_w_px": -13
+      },
+      "keypoint_shift_px": 33.70903985553551
+    },
+    {
+      "sample_id": 21,
+      "path": "calibration/samples/sample_0021.npy",
+      "dataset_index": 3,
+      "sha256": "9ce810e1e0afe3322e10a2c3246b88700470c4e6013cb6f6884e71df7d123796",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3021,
+        "angle_deg": 299.85148429870605,
+        "length_px": 4.037253499031067,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 6.898885048518534
+    },
+    {
+      "sample_id": 22,
+      "path": "calibration/samples/sample_0022.npy",
+      "dataset_index": 4,
+      "sha256": "54006fa816b90fe3de368ee37909ccba923651f5138fcb0275a54827313e8ad7",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2022,
+        "brightness": 0.9687415540218353,
+        "offset": 0.08438982963562013,
+        "shift_h_px": 10,
+        "shift_w_px": -11
+      },
+      "keypoint_shift_px": 40.92496650585757
+    },
+    {
+      "sample_id": 23,
+      "path": "calibration/samples/sample_0023.npy",
+      "dataset_index": 5,
+      "sha256": "337cb943450c79da1cd5e0ff36bd4cccd624a29e37db28a9bbc26f3f2137ad97",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3023,
+        "angle_deg": 47.798638343811035,
+        "length_px": 5.626916170120239,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 476.103072675827
+    },
+    {
+      "sample_id": 24,
+      "path": "calibration/samples/sample_0024.npy",
+      "dataset_index": 0,
+      "sha256": "0fdd94e80890b8ddd10f5989581d2e7cfa809480602971a07a9ce8c2393b0333",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2024,
+        "brightness": 1.0095147609710693,
+        "offset": 0.06625359058380127,
+        "shift_h_px": 14,
+        "shift_w_px": 6
+      },
+      "keypoint_shift_px": 39.60923873695104
+    },
+    {
+      "sample_id": 25,
+      "path": "calibration/samples/sample_0025.npy",
+      "dataset_index": 1,
+      "sha256": "f36f55561c6168bbec2265398f4c470e3c8698c643e85959bb92856ff84f86cb",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3025,
+        "angle_deg": 94.60616827011108,
+        "length_px": 5.17207396030426,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 6.01681763591481
+    },
+    {
+      "sample_id": 26,
+      "path": "calibration/samples/sample_0026.npy",
+      "dataset_index": 2,
+      "sha256": "e924854d7167d2a57a864be473f2e5af4810b7282fe47cd7d029ae4a373dfb71",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2026,
+        "brightness": 0.8957443416118621,
+        "offset": -0.04961693286895752,
+        "shift_h_px": -9,
+        "shift_w_px": -17
+      },
+      "keypoint_shift_px": 255.0833309611569
+    },
+    {
+      "sample_id": 27,
+      "path": "calibration/samples/sample_0027.npy",
+      "dataset_index": 3,
+      "sha256": "b6d746f53f76293d7e34070207af902c24ae77499b0a4724db854888d1b28995",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3027,
+        "angle_deg": 15.075387954711914,
+        "length_px": 7.140313625335693,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 6.9369851880017785
+    },
+    {
+      "sample_id": 28,
+      "path": "calibration/samples/sample_0028.npy",
+      "dataset_index": 4,
+      "sha256": "396c1b4b3c524f8c83f030869df81ec25548d56e05eee3a3deec7af6514364c0",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2028,
+        "brightness": 1.0443756461143494,
+        "offset": 0.010395503044128418,
+        "shift_h_px": 6,
+        "shift_w_px": 16
+      },
+      "keypoint_shift_px": 39.91442812972821
+    },
+    {
+      "sample_id": 29,
+      "path": "calibration/samples/sample_0029.npy",
+      "dataset_index": 5,
+      "sha256": "926e75f32e90718b587391a8ecf24a34133aa4006090ba30c885154b97a5b33b",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3029,
+        "angle_deg": 103.31073045730591,
+        "length_px": 7.477926850318909,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 337.35305700146796
+    },
+    {
+      "sample_id": 30,
+      "path": "calibration/samples/sample_0030.npy",
+      "dataset_index": 0,
+      "sha256": "1e3bbd65d6f3f545610b431af1dd0d6c6aa1a56e65be7a4f24b2d80f78bf9f3d",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2030,
+        "brightness": 0.9540863931179047,
+        "offset": -0.05388389825820923,
+        "shift_h_px": 6,
+        "shift_w_px": 17
+      },
+      "keypoint_shift_px": 44.7588762061741
+    },
+    {
+      "sample_id": 31,
+      "path": "calibration/samples/sample_0031.npy",
+      "dataset_index": 1,
+      "sha256": "be99acbb46107bc42453b33a49ea0beea22146abef63b152e1288a8550a5ffa8",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3031,
+        "angle_deg": 160.61286449432373,
+        "length_px": 3.574754476547241,
+        "kernel_size": 7
+      },
+      "keypoint_shift_px": 2.8671672392429484
+    },
+    {
+      "sample_id": 32,
+      "path": "calibration/samples/sample_0032.npy",
+      "dataset_index": 2,
+      "sha256": "d7d2d8a99a45919e7a48a2c7acfb131cb76bf6d11e3b28c6b50684230616fa57",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2032,
+        "brightness": 1.0384569764137268,
+        "offset": 0.05420176982879639,
+        "shift_h_px": -7,
+        "shift_w_px": -5
+      },
+      "keypoint_shift_px": 23.39751322327836
+    },
+    {
+      "sample_id": 33,
+      "path": "calibration/samples/sample_0033.npy",
+      "dataset_index": 3,
+      "sha256": "454a4ba3eb5704b6f1b318fb00f412cc045397a046e4498e2c94750e9ed45a3e",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3033,
+        "angle_deg": 121.39296054840088,
+        "length_px": 8.0764821767807,
+        "kernel_size": 13
+      },
+      "keypoint_shift_px": 8.514650248086621
+    },
+    {
+      "sample_id": 34,
+      "path": "calibration/samples/sample_0034.npy",
+      "dataset_index": 4,
+      "sha256": "b8569007be385a434adeaa46f2ca15e557f44c236252eaac1473fd0bf5157a1a",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2034,
+        "brightness": 0.9339136064052581,
+        "offset": 0.08278042078018188,
+        "shift_h_px": 17,
+        "shift_w_px": -5
+      },
+      "keypoint_shift_px": 47.70323131508965
+    },
+    {
+      "sample_id": 35,
+      "path": "calibration/samples/sample_0035.npy",
+      "dataset_index": 5,
+      "sha256": "e07ecf080abca939d323db3ebbb51bc634149d9a2c3b062b1ecf9ffea35a0864",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3035,
+        "angle_deg": 194.070782661438,
+        "length_px": 5.646828532218933,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 31.570769754118754
+    },
+    {
+      "sample_id": 36,
+      "path": "calibration/samples/sample_0036.npy",
+      "dataset_index": 0,
+      "sha256": "30c1de984bf216a97190003200dc13f6aea6f3ef31853c4cb6324b7747ab4a00",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2036,
+        "brightness": 0.9796459674835205,
+        "offset": -0.08941463232040406,
+        "shift_h_px": -3,
+        "shift_w_px": -13
+      },
+      "keypoint_shift_px": 32.68866073468153
+    },
+    {
+      "sample_id": 37,
+      "path": "calibration/samples/sample_0037.npy",
+      "dataset_index": 1,
+      "sha256": "dbb956be387ed18ed62cd65cc53c22fe08997a77c5c8fd6a8f78f2eb54f0d3e9",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3037,
+        "angle_deg": 313.7850880622864,
+        "length_px": 4.043320298194885,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 3.397571614311052
+    },
+    {
+      "sample_id": 38,
+      "path": "calibration/samples/sample_0038.npy",
+      "dataset_index": 2,
+      "sha256": "5cb4cf407617b1dc04beac69176547d961db67faed52658b7aa26f24aa42e24a",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2038,
+        "brightness": 1.1297323167324067,
+        "offset": 0.024780368804931643,
+        "shift_h_px": 3,
+        "shift_w_px": -6
+      },
+      "keypoint_shift_px": 15.108363407568122
+    },
+    {
+      "sample_id": 39,
+      "path": "calibration/samples/sample_0039.npy",
+      "dataset_index": 3,
+      "sha256": "2c8963a8639e57a1bfe526227d658659979c8c87f6e4b5e1f082361429c55322",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3039,
+        "angle_deg": 57.17317342758179,
+        "length_px": 7.206408619880676,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 10.058582468628002
+    },
+    {
+      "sample_id": 40,
+      "path": "calibration/samples/sample_0040.npy",
+      "dataset_index": 4,
+      "sha256": "672f9e3d25c78b97e5ece56f43f058c745ebf136e37a3135c276324c9fa96c89",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2040,
+        "brightness": 0.9405290424823761,
+        "offset": 0.055469429492950445,
+        "shift_h_px": 15,
+        "shift_w_px": -17
+      },
+      "keypoint_shift_px": 58.367567722543036
+    },
+    {
+      "sample_id": 41,
+      "path": "calibration/samples/sample_0041.npy",
+      "dataset_index": 5,
+      "sha256": "7020f375f591cf1e526b3c658b9eaa6b0364f48f6bdaf451e308970a1eeeb977",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3041,
+        "angle_deg": 269.35051918029785,
+        "length_px": 8.78177547454834,
+        "kernel_size": 13
+      },
+      "keypoint_shift_px": 496.46234814538633
+    },
+    {
+      "sample_id": 42,
+      "path": "calibration/samples/sample_0042.npy",
+      "dataset_index": 0,
+      "sha256": "f9df0b7bd4db5dd03871d1ca1a0cff9ba9d450063b0b56c57303082708af9ef0",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2042,
+        "brightness": 1.0262864708900452,
+        "offset": -0.04990407228469849,
+        "shift_h_px": -23,
+        "shift_w_px": -2
+      },
+      "keypoint_shift_px": 58.7515920400668
+    },
+    {
+      "sample_id": 43,
+      "path": "calibration/samples/sample_0043.npy",
+      "dataset_index": 1,
+      "sha256": "c1d008665d9e1a56307f8f739fd15bac3c51c2d688871847a955b2d8e32f3cd8",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3043,
+        "angle_deg": 239.56615447998047,
+        "length_px": 6.258416175842285,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 6.981873362925277
+    },
+    {
+      "sample_id": 44,
+      "path": "calibration/samples/sample_0044.npy",
+      "dataset_index": 2,
+      "sha256": "85fd5318b59ec8b772d53b076f0aacc12e31dcb3b17de4f60701b25971abe1ad",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2044,
+        "brightness": 1.138821053504944,
+        "offset": 0.08915562629699708,
+        "shift_h_px": 19,
+        "shift_w_px": -17
+      },
+      "keypoint_shift_px": 62.46921478802648
+    },
+    {
+      "sample_id": 45,
+      "path": "calibration/samples/sample_0045.npy",
+      "dataset_index": 3,
+      "sha256": "b850a7702ebbffb383c09c5f070bf3b82aa5201e08d83b2d04fb65a251de6130",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3045,
+        "angle_deg": 53.61647844314575,
+        "length_px": 3.0769193172454834,
+        "kernel_size": 7
+      },
+      "keypoint_shift_px": 6.498161936192961
+    },
+    {
+      "sample_id": 46,
+      "path": "calibration/samples/sample_0046.npy",
+      "dataset_index": 4,
+      "sha256": "ab5719d8781d657c4bb3b1cc35d79a0d89964f7eef26b1d102e175d6160b61a6",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2046,
+        "brightness": 0.8853960752487182,
+        "offset": 0.037789475917816166,
+        "shift_h_px": -4,
+        "shift_w_px": 8
+      },
+      "keypoint_shift_px": 21.914226254367843
+    },
+    {
+      "sample_id": 47,
+      "path": "calibration/samples/sample_0047.npy",
+      "dataset_index": 5,
+      "sha256": "3896f40cf412b0db64357c31c9ecc968ca8471f33e788adc1ee40611160fa6fa",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3047,
+        "angle_deg": 251.82910680770874,
+        "length_px": 4.313166260719299,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 7.564627070878246
+    },
+    {
+      "sample_id": 48,
+      "path": "calibration/samples/sample_0048.npy",
+      "dataset_index": 0,
+      "sha256": "df824789d38969d7a8c44e636744a4a9aa0b05fd7ccdd9092c7705bef53d3fd4",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2048,
+        "brightness": 1.1322354257106781,
+        "offset": 0.07879444360733033,
+        "shift_h_px": -13,
+        "shift_w_px": 14
+      },
+      "keypoint_shift_px": 49.39656593554116
+    },
+    {
+      "sample_id": 49,
+      "path": "calibration/samples/sample_0049.npy",
+      "dataset_index": 1,
+      "sha256": "8009478bdb61dfdd003e9101a277c495fcb3de06a135bf6f09004d0f9e1f0699",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3049,
+        "angle_deg": 81.91427707672119,
+        "length_px": 3.546654224395752,
+        "kernel_size": 7
+      },
+      "keypoint_shift_px": 3.88815907674734
+    },
+    {
+      "sample_id": 50,
+      "path": "calibration/samples/sample_0050.npy",
+      "dataset_index": 2,
+      "sha256": "16bf2cfdbc5549054b26b2505d665fa09a7cf10d8a834f8eb5e7bf1c20355bb8",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2050,
+        "brightness": 0.9197151362895966,
+        "offset": 0.03022301197052002,
+        "shift_h_px": -3,
+        "shift_w_px": 7
+      },
+      "keypoint_shift_px": 18.934310217482604
+    },
+    {
+      "sample_id": 51,
+      "path": "calibration/samples/sample_0051.npy",
+      "dataset_index": 3,
+      "sha256": "23e597700225620962b5faba9111b5c5cfdd1dd00b09e04593088d157d72dfe8",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3051,
+        "angle_deg": 59.16221380233765,
+        "length_px": 6.823476791381836,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 9.985316903563573
+    },
+    {
+      "sample_id": 52,
+      "path": "calibration/samples/sample_0052.npy",
+      "dataset_index": 4,
+      "sha256": "025ae0e175310d1bd4cda0b68806024bbab9f0a9a3614599981809c56c678410",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2052,
+        "brightness": 0.9388686656951905,
+        "offset": -0.05813354253768921,
+        "shift_h_px": 17,
+        "shift_w_px": -9
+      },
+      "keypoint_shift_px": 50.56569914294992
+    },
+    {
+      "sample_id": 53,
+      "path": "calibration/samples/sample_0053.npy",
+      "dataset_index": 5,
+      "sha256": "2ee8dddbb5e4385232e78283b1c5363f303446347e41e4e31993a33d600b9120",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3053,
+        "angle_deg": 143.74372243881226,
+        "length_px": 6.964395761489868,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 6.665224779848746
+    },
+    {
+      "sample_id": 54,
+      "path": "calibration/samples/sample_0054.npy",
+      "dataset_index": 0,
+      "sha256": "b23e599dac3e5a4195d54f8c6d75acbb741dc172306d936bf2b295dc20d3521c",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2054,
+        "brightness": 1.1324735164642334,
+        "offset": 0.08074941635131837,
+        "shift_h_px": -18,
+        "shift_w_px": 5
+      },
+      "keypoint_shift_px": 47.83563444008726
+    },
+    {
+      "sample_id": 55,
+      "path": "calibration/samples/sample_0055.npy",
+      "dataset_index": 1,
+      "sha256": "6ec44ba7e0dfb2a935f74fffe9e34ec0d9172a59b5c4633705a959da21cd5cdd",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3055,
+        "angle_deg": 202.43893146514893,
+        "length_px": 7.368406534194946,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 5.349474187365048
+    },
+    {
+      "sample_id": 56,
+      "path": "calibration/samples/sample_0056.npy",
+      "dataset_index": 2,
+      "sha256": "6925b1c9b182a1d1c4d5794c6cdfbeb6fbbc521e6da1dc426bd9f8836fae764b",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2056,
+        "brightness": 1.117323899269104,
+        "offset": 0.02735337018966675,
+        "shift_h_px": 1,
+        "shift_w_px": 5
+      },
+      "keypoint_shift_px": 14.613646912149676
+    },
+    {
+      "sample_id": 57,
+      "path": "calibration/samples/sample_0057.npy",
+      "dataset_index": 3,
+      "sha256": "1f12026de2f81c1524bcc2e6af11231d14c57705561d24448f4f5ea6179013b2",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3057,
+        "angle_deg": 10.999996662139893,
+        "length_px": 5.677812337875366,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 5.489036627020415
+    },
+    {
+      "sample_id": 58,
+      "path": "calibration/samples/sample_0058.npy",
+      "dataset_index": 4,
+      "sha256": "5e113dc1e6697efaa169efe60b2bb44b6dbba86b5fda7babb75d58bd8254f975",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2058,
+        "brightness": 1.1311416923999786,
+        "offset": -0.03451905250549316,
+        "shift_h_px": 20,
+        "shift_w_px": 9
+      },
+      "keypoint_shift_px": 55.53370730580747
+    },
+    {
+      "sample_id": 59,
+      "path": "calibration/samples/sample_0059.npy",
+      "dataset_index": 5,
+      "sha256": "c9bf094383dc9c4eff9d9c687d64ae1be77537ddbdc21234aa22f734bb8bb72e",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3059,
+        "angle_deg": 295.05753993988037,
+        "length_px": 7.819313049316406,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 122.52192100609369
+    },
+    {
+      "sample_id": 60,
+      "path": "calibration/samples/sample_0060.npy",
+      "dataset_index": 0,
+      "sha256": "c8b80498612c9ee01dd4b0713a0f0672e92b61034fc209ad7152e336bd800a36",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2060,
+        "brightness": 0.890576297044754,
+        "offset": 0.02980949878692627,
+        "shift_h_px": -18,
+        "shift_w_px": -4
+      },
+      "keypoint_shift_px": 48.44928613700875
+    },
+    {
+      "sample_id": 61,
+      "path": "calibration/samples/sample_0061.npy",
+      "dataset_index": 1,
+      "sha256": "217817af749a0ef52f42ac8065e53151d20df5718e991c5b743ac48871969df1",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3061,
+        "angle_deg": 46.63273572921753,
+        "length_px": 6.794629454612732,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 8.581717922571434
+    },
+    {
+      "sample_id": 62,
+      "path": "calibration/samples/sample_0062.npy",
+      "dataset_index": 2,
+      "sha256": "7d7ca7252c9eba74da17f66b1dba851d8b1df33db5a0dd39e92597e10219dc14",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2062,
+        "brightness": 1.0115285813808441,
+        "offset": 0.04150826930999756,
+        "shift_h_px": -24,
+        "shift_w_px": 9
+      },
+      "keypoint_shift_px": 62.87202678279053
+    },
+    {
+      "sample_id": 63,
+      "path": "calibration/samples/sample_0063.npy",
+      "dataset_index": 3,
+      "sha256": "60dd1a83a19f1c78c55d7bda7a969990c8f871c255a299c1be25b44cc0397e9a",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3063,
+        "angle_deg": 195.39461374282837,
+        "length_px": 6.578112244606018,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 6.333268540630081
+    },
+    {
+      "sample_id": 64,
+      "path": "calibration/samples/sample_0064.npy",
+      "dataset_index": 4,
+      "sha256": "f11e4ab889e91e3871de9752768a79b0f9c66ee780392358fe9f691d35959ed0",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2064,
+        "brightness": 1.0343129098415376,
+        "offset": 0.04911322593688965,
+        "shift_h_px": -2,
+        "shift_w_px": 9
+      },
+      "keypoint_shift_px": 20.683927089110774
+    },
+    {
+      "sample_id": 65,
+      "path": "calibration/samples/sample_0065.npy",
+      "dataset_index": 5,
+      "sha256": "bcd880648ad718159e41ea45753307c0e41e856286ec03de40126fb526335ada",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3065,
+        "angle_deg": 164.7368574142456,
+        "length_px": 4.591412901878357,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 22.65704212968946
+    },
+    {
+      "sample_id": 66,
+      "path": "calibration/samples/sample_0066.npy",
+      "dataset_index": 0,
+      "sha256": "12526018e40274480544204f146f9a2ed8a49540756ca823548dec6315eaa35c",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2066,
+        "brightness": 1.144089502096176,
+        "offset": 0.030710315704345705,
+        "shift_h_px": -16,
+        "shift_w_px": 5
+      },
+      "keypoint_shift_px": 43.02029468260033
+    },
+    {
+      "sample_id": 67,
+      "path": "calibration/samples/sample_0067.npy",
+      "dataset_index": 1,
+      "sha256": "97021eaf22c14b5f1755bd53cc71905c83319b25e480772a9db48f08fd3fab91",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3067,
+        "angle_deg": 73.17358016967773,
+        "length_px": 3.4566128253936768,
+        "kernel_size": 7
+      },
+      "keypoint_shift_px": 3.4643253056078116
+    },
+    {
+      "sample_id": 68,
+      "path": "calibration/samples/sample_0068.npy",
+      "dataset_index": 2,
+      "sha256": "b0e6756352fd2019241c0fc9ec74790c0561fa75d4f33b9d52ab030076c3fe4b",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2068,
+        "brightness": 0.946229326725006,
+        "offset": -0.06766204833984375,
+        "shift_h_px": -17,
+        "shift_w_px": -18
+      },
+      "keypoint_shift_px": 61.660549973417346
+    },
+    {
+      "sample_id": 69,
+      "path": "calibration/samples/sample_0069.npy",
+      "dataset_index": 3,
+      "sha256": "2873d7103a8fa0fdff5a4348bd3b2bc891349632d16b6769005d7cef060ebbcc",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3069,
+        "angle_deg": 55.50649166107178,
+        "length_px": 8.079019546508789,
+        "kernel_size": 13
+      },
+      "keypoint_shift_px": 9.712124501602245
+    },
+    {
+      "sample_id": 70,
+      "path": "calibration/samples/sample_0070.npy",
+      "dataset_index": 4,
+      "sha256": "c0464acc82818a85d2a38081612fd4fca2cd74e05878f2958692e8d0e3275e25",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2070,
+        "brightness": 1.0241012394428253,
+        "offset": 0.0924110770225525,
+        "shift_h_px": -4,
+        "shift_w_px": 4
+      },
+      "keypoint_shift_px": 14.141771754498347
+    },
+    {
+      "sample_id": 71,
+      "path": "calibration/samples/sample_0071.npy",
+      "dataset_index": 5,
+      "sha256": "85659be665e0b341f9c1995906069a0e8935605ea100b8a464f2539625427ba0",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3071,
+        "angle_deg": 355.5383491516113,
+        "length_px": 5.779507040977478,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 23.853206585908836
+    },
+    {
+      "sample_id": 72,
+      "path": "calibration/samples/sample_0072.npy",
+      "dataset_index": 0,
+      "sha256": "dc0d1052799f3e1a781d7db04a401a6dea497740927dc574e371e7cf58d9a7b8",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2072,
+        "brightness": 0.9119863331317901,
+        "offset": -0.03544641733169556,
+        "shift_h_px": -3,
+        "shift_w_px": 10
+      },
+      "keypoint_shift_px": 27.56485740808849
+    },
+    {
+      "sample_id": 73,
+      "path": "calibration/samples/sample_0073.npy",
+      "dataset_index": 1,
+      "sha256": "43d04bbfe2b0d284b46ffc2b6df80ddfd42334552d32074d0ab0c4c261116b38",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3073,
+        "angle_deg": 274.93099451065063,
+        "length_px": 7.196170449256897,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 9.14123073508696
+    },
+    {
+      "sample_id": 74,
+      "path": "calibration/samples/sample_0074.npy",
+      "dataset_index": 2,
+      "sha256": "1550a81eebf9192219a1841b87a8258e9db3e409e525af7db6584d6e257199b4",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2074,
+        "brightness": 1.0548149645328522,
+        "offset": 0.05454767942428589,
+        "shift_h_px": 9,
+        "shift_w_px": 17
+      },
+      "keypoint_shift_px": 46.758421781950354
+    },
+    {
+      "sample_id": 75,
+      "path": "calibration/samples/sample_0075.npy",
+      "dataset_index": 3,
+      "sha256": "71b54a2ff2a5cb83a454b87441257f33bf18e1038cf3f9e12261572f3924bda1",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3075,
+        "angle_deg": 6.527767181396484,
+        "length_px": 4.371153116226196,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 4.08853668231243
+    },
+    {
+      "sample_id": 76,
+      "path": "calibration/samples/sample_0076.npy",
+      "dataset_index": 4,
+      "sha256": "aaa88d7b4700d75272ab1bde659f724ae1773985b7006f45927c528e54bc1008",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2076,
+        "brightness": 0.9652877807617187,
+        "offset": 0.06884318590164185,
+        "shift_h_px": -10,
+        "shift_w_px": -8
+      },
+      "keypoint_shift_px": 31.058418231457466
+    },
+    {
+      "sample_id": 77,
+      "path": "calibration/samples/sample_0077.npy",
+      "dataset_index": 5,
+      "sha256": "c6cd7a23a0e1919a277b05a5657085890164ff3680b013a753de68e18b106960",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3077,
+        "angle_deg": 170.49225568771362,
+        "length_px": 6.894715189933777,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 23.42366088689635
+    },
+    {
+      "sample_id": 78,
+      "path": "calibration/samples/sample_0078.npy",
+      "dataset_index": 0,
+      "sha256": "c1c4802867f02c176b4c11f832843b1b27adccf7bd91e3b9ed2528116991c4fd",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2078,
+        "brightness": 0.9763359785079956,
+        "offset": -0.014789831638336182,
+        "shift_h_px": 5,
+        "shift_w_px": 0
+      },
+      "keypoint_shift_px": 15.784973077848697
+    },
+    {
+      "sample_id": 79,
+      "path": "calibration/samples/sample_0079.npy",
+      "dataset_index": 1,
+      "sha256": "c54234966c2f410a9d800ec7741561a4a57811d9ee13f32080679bba9a3343e8",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3079,
+        "angle_deg": 202.24096298217773,
+        "length_px": 6.489051818847656,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 4.7679496927210545
+    },
+    {
+      "sample_id": 80,
+      "path": "calibration/samples/sample_0080.npy",
+      "dataset_index": 2,
+      "sha256": "f9d75fdd4401102d7e908f22c906968991b9d5a6b0038954319fffe84bb612ac",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2080,
+        "brightness": 0.916338038444519,
+        "offset": -0.0479551911354065,
+        "shift_h_px": 16,
+        "shift_w_px": 18
+      },
+      "keypoint_shift_px": 60.47047798691968
+    },
+    {
+      "sample_id": 81,
+      "path": "calibration/samples/sample_0081.npy",
+      "dataset_index": 3,
+      "sha256": "8b9c5bcfd8b63c9157385bc89bf54d0e500ab0ab353e65f414c7d6126b192425",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3081,
+        "angle_deg": 323.6583638191223,
+        "length_px": 3.7474071979522705,
+        "kernel_size": 7
+      },
+      "keypoint_shift_px": 5.914730747416216
+    },
+    {
+      "sample_id": 82,
+      "path": "calibration/samples/sample_0082.npy",
+      "dataset_index": 4,
+      "sha256": "0d464408fba9297b7311ba30f0b3142ac7c3f618144c302723346e44cc90cacb",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2082,
+        "brightness": 1.0919338583946228,
+        "offset": 0.06186089515686036,
+        "shift_h_px": 13,
+        "shift_w_px": -2
+      },
+      "keypoint_shift_px": 34.31958265023302
+    },
+    {
+      "sample_id": 83,
+      "path": "calibration/samples/sample_0083.npy",
+      "dataset_index": 5,
+      "sha256": "3190cdd1f4e0419b26a0e79e87d4bc9afe2af75cfdb0b894486cc640870bbe5c",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3083,
+        "angle_deg": 25.71774959564209,
+        "length_px": 8.43272316455841,
+        "kernel_size": 13
+      },
+      "keypoint_shift_px": 496.8282118836454
+    },
+    {
+      "sample_id": 84,
+      "path": "calibration/samples/sample_0084.npy",
+      "dataset_index": 0,
+      "sha256": "5386c9c4344fa793c81867a2672314b8acb83bbfae18da5f33f7fc16e4357120",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2084,
+        "brightness": 1.0951511681079864,
+        "offset": 0.06681420803070069,
+        "shift_h_px": 6,
+        "shift_w_px": -8
+      },
+      "keypoint_shift_px": 27.781320468933995
+    },
+    {
+      "sample_id": 85,
+      "path": "calibration/samples/sample_0085.npy",
+      "dataset_index": 1,
+      "sha256": "adf50254841eee2084a3ff47b6468c253dac11e74e06ad19e86650b1fbc0219f",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3085,
+        "angle_deg": 337.14905977249146,
+        "length_px": 4.5021092891693115,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 4.0306167767124546
+    },
+    {
+      "sample_id": 86,
+      "path": "calibration/samples/sample_0086.npy",
+      "dataset_index": 2,
+      "sha256": "e7b53566b751464ce34d09aa51339b03ba84987864bde1cf1a1fb769622c146a",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2086,
+        "brightness": 0.8986614763736724,
+        "offset": -0.008626997470855713,
+        "shift_h_px": 0,
+        "shift_w_px": 13
+      },
+      "keypoint_shift_px": 33.653259089406106
+    },
+    {
+      "sample_id": 87,
+      "path": "calibration/samples/sample_0087.npy",
+      "dataset_index": 3,
+      "sha256": "9334a8699c31fa2909fab3c7864c554e994f4f34c35438c9237e299084884506",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3087,
+        "angle_deg": 306.77164793014526,
+        "length_px": 6.735044360160828,
+        "kernel_size": 11
+      },
+      "keypoint_shift_px": 8.409360370338042
+    },
+    {
+      "sample_id": 88,
+      "path": "calibration/samples/sample_0088.npy",
+      "dataset_index": 4,
+      "sha256": "21493d0e88aae5d4bb7a475fe57424ef5b9769a5505e5c8fd54a70894ba1881e",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2088,
+        "brightness": 1.0831278264522552,
+        "offset": 0.021636605262756348,
+        "shift_h_px": 21,
+        "shift_w_px": -10
+      },
+      "keypoint_shift_px": 123.04409965191489
+    },
+    {
+      "sample_id": 89,
+      "path": "calibration/samples/sample_0089.npy",
+      "dataset_index": 5,
+      "sha256": "9aab8a03e1ba98db2900ee21160d0542fefc7e2d9562a4f4652fc61d777a8405",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3089,
+        "angle_deg": 224.1642451286316,
+        "length_px": 5.348861575126648,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 475.8668935469457
+    },
+    {
+      "sample_id": 90,
+      "path": "calibration/samples/sample_0090.npy",
+      "dataset_index": 0,
+      "sha256": "823724f78f2d50f6d26923e5cb3b02b7564a22af2602dce8d3814e9032a5f4f0",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2090,
+        "brightness": 0.8563797950744628,
+        "offset": -0.06379798650741578,
+        "shift_h_px": 12,
+        "shift_w_px": 9
+      },
+      "keypoint_shift_px": 38.75647727411509
+    },
+    {
+      "sample_id": 91,
+      "path": "calibration/samples/sample_0091.npy",
+      "dataset_index": 1,
+      "sha256": "fa4a83a147c9328eda213c2a6175f3f987cc2e44fd379e6c1e08262c918079a7",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3091,
+        "angle_deg": 115.30018329620361,
+        "length_px": 3.239664316177368,
+        "kernel_size": 7
+      },
+      "keypoint_shift_px": 3.3957174791448663
+    },
+    {
+      "sample_id": 92,
+      "path": "calibration/samples/sample_0092.npy",
+      "dataset_index": 2,
+      "sha256": "a9938ba32912573fb964d0ab01b493f6b70979278e21751d0383e0bac1ce4976",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2092,
+        "brightness": 0.9478149056434632,
+        "offset": -0.00706859827041626,
+        "shift_h_px": -22,
+        "shift_w_px": 17
+      },
+      "keypoint_shift_px": 65.98166033595449
+    },
+    {
+      "sample_id": 93,
+      "path": "calibration/samples/sample_0093.npy",
+      "dataset_index": 3,
+      "sha256": "e93f3a23ededb313bbbef1bff4861a71d59ed6aa09e04c2f94ee8f0c63871743",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3093,
+        "angle_deg": 264.38366889953613,
+        "length_px": 5.522342205047607,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 9.894736103638115
+    },
+    {
+      "sample_id": 94,
+      "path": "calibration/samples/sample_0094.npy",
+      "dataset_index": 4,
+      "sha256": "cf765c37f134e88a6c38e5838b2b0a8c56b0edba00fa7593fdccb7886a6156d6",
+      "augmentation_family": "classic_photometric_spatial",
+      "augmentation_params": {
+        "seed": 2094,
+        "brightness": 0.943045026063919,
+        "offset": -0.001064133644104004,
+        "shift_h_px": -2,
+        "shift_w_px": 6
+      },
+      "keypoint_shift_px": 14.309621242941848
+    },
+    {
+      "sample_id": 95,
+      "path": "calibration/samples/sample_0095.npy",
+      "dataset_index": 5,
+      "sha256": "bd32f456b8abdead12c8079ce90f0325bdb4633950f49599607ed4b700d4951b",
+      "augmentation_family": "motion_blur",
+      "augmentation_params": {
+        "seed": 3095,
+        "angle_deg": 250.31610488891602,
+        "length_px": 5.490406036376953,
+        "kernel_size": 9
+      },
+      "keypoint_shift_px": 158.8877721972409
+    }
+  ],
+  "env": {
+    "python": "3.12.3",
+    "torch": "2.14.0+cu130",
+    "torch_cuda": "13.0",
+    "cudnn": 92400,
+    "transformers": "5.17.0",
+    "ultralytics": "8.4.155",
+    "gpu_name": "NVIDIA L4",
+    "nvidia_driver": "595.84"
+  }
+}

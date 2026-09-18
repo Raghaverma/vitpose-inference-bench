@@ -1,0 +1,49 @@
+{
+  "note": "backbone-only, lower-bound FLOPs/bytes -- see module docstring",
+  "l4_peak_fp16_tflops": 121.0,
+  "l4_memory_bandwidth_gbps": 300.0,
+  "per_image_flops_backbone_only": 119587995648,
+  "weight_bytes_backbone_only": 603979776,
+  "rows": [
+    {
+      "batch": 1,
+      "measured_ms": 5.061435988172889,
+      "compute_floor_ms": 0.9883305425454545,
+      "bandwidth_floor_ms": 2.0447232,
+      "governing_floor": "bandwidth",
+      "compute_efficiency": 0.403980847486351
+    },
+    {
+      "batch": 2,
+      "measured_ms": 7.477884859545156,
+      "compute_floor_ms": 1.976661085090909,
+      "bandwidth_floor_ms": 2.07618048,
+      "governing_floor": "bandwidth",
+      "compute_efficiency": 0.277642745107242
+    },
+    {
+      "batch": 4,
+      "measured_ms": 13.551138036418706,
+      "compute_floor_ms": 3.953322170181818,
+      "bandwidth_floor_ms": 2.13909504,
+      "governing_floor": "compute",
+      "compute_efficiency": 0.29173359164058826
+    },
+    {
+      "batch": 8,
+      "measured_ms": 27.567677575862035,
+      "compute_floor_ms": 7.906644340363636,
+      "bandwidth_floor_ms": 2.26492416,
+      "governing_floor": "compute",
+      "compute_efficiency": 0.2868085031321829
+    },
+    {
+      "batch": 16,
+      "measured_ms": 51.477735242806375,
+      "compute_floor_ms": 15.813288680727272,
+      "bandwidth_floor_ms": 2.5165824,
+      "governing_floor": "compute",
+      "compute_efficiency": 0.30718695385763034
+    }
+  ]
+}

@@ -8,8 +8,8 @@ preserving pose accuracy? The plan is PyTorch baseline → ONNX → TensorRT
 *correct*, not just fast. PyTorch, ONNX Runtime, and TensorRT are competing
 inference *backends* this repo benchmarks against each other -- not a
 TensorRT-only exercise. The repo is built incrementally, stage by stage;
-Stages 0-4 (TensorRT FP16, including its batch-size sweep) exist so far --
-TensorRT INT8, GPU profiling, and the async video pipeline do not yet.
+Stages 0-5 (TensorRT FP16 with its batch-size sweep, plus GPU profiling)
+exist so far -- TensorRT INT8 and the async video pipeline do not yet.
 
 ## System Architecture
 
@@ -447,6 +447,37 @@ Outputs land in `golden/distinct_crops.npy` + `distinct_pytorch_fp16_outputs.npy
 `results/tensorrt/`, and `results/baseline/`, and the aggregated
 `results/batch_matrix.json`.
 
+## Stage 5 — GPU profiling: why is TensorRT fast, and why does the advantage shrink?
+
+See **[`profiling/README.md`](profiling/README.md)** for the full writeup.
+Short version: `nsys`/`ncu` aren't installed on this machine (would need
+sudo + a new NVIDIA apt repo + a 500MB+ download); everything below uses
+tools already installed with zero new footprint -- TensorRT's own
+`IProfiler`, `torch.cuda.Event`, and arithmetic against Stage 4's own data.
+
+- **A genuine H2D/exec/D2H/postprocess breakdown** (not Stage 4's benchmark
+  loop, which was checked empirically to contain zero real memory copies or
+  decoding -- see the "Finding 0" callout in `profiling/README.md`).
+  Transfers are negligible at every batch size; **postprocessing is 25.6%
+  of latency at batch=1, growing to 36.7% at batch=16** (CPU-bound, doesn't
+  benefit from GPU batching) -- a direct preview of the bottleneck Stage
+  7/8's video pipeline will hit.
+- **TensorRT's own per-layer profiler** (zero new installs) shows no single
+  dominant layer -- cost is evenly spread across the ViT-L backbone's 24
+  transformer blocks. Each top layer's time grows ~11x for a 16x batch
+  increase (sub-linear): a batching efficiency gain that **also helps
+  PyTorch's own batched kernels**, not something TensorRT-exclusive.
+- **A roofline check ruled out an intuitive-sounding explanation** rather
+  than confirming one: measured latency never gets within 41% of either the
+  compute or bandwidth theoretical floor, at any batch size -- this isn't a
+  story about either backend approaching a hardware ceiling.
+- **The actual mechanism**: TensorRT's fixed per-op overhead elimination is
+  proportionally huge at batch=1 against an overhead-dominated PyTorch
+  baseline; as batch grows, PyTorch's own batched GEMMs get more efficient
+  too (independent of TensorRT), amortizing away the overhead that gave
+  TensorRT its edge -- so the *ratio* shrinks even though neither backend
+  is near the hardware ceiling.
+
 ## Key Findings
 
 1. ViTPose++-L is the dominant stage in the measured single-image pipeline
@@ -504,22 +535,41 @@ Outputs land in `golden/distinct_crops.npy` + `distinct_pytorch_fp16_outputs.npy
     (2849MB → 2949MB, batch 1→16) because engine weights (~833MB) and the
     CUDA context's fixed overhead dominate; only the activation workspace
     TensorRT itself declares (5.0MB → 67.5MB) actually scales with batch.
-16. **TensorRT INT8, GPU profiling, and the async video pipeline have NOT
-    yet been built** and are not represented as completed anywhere in this
-    repo.
+16. Stage 4's benchmark loop was checked empirically and contains zero real
+    H2D/D2H copies or postprocessing (input/output tensors stay
+    GPU-resident) -- the 5.07ms/51.48ms figures are engine-only, not
+    deployment-realistic. A separate, genuinely-instrumented measurement
+    (`profiling/profile_deployment_stages.py`) found postprocessing alone
+    is 25.6% of realistic latency at batch=1, growing to 36.7% at batch=16
+    -- it's CPU-bound and doesn't benefit from GPU batching.
+17. TensorRT's own per-layer profiler (zero new installs, `nsys`/`ncu`
+    aren't on this machine) shows no single dominant layer -- cost is
+    evenly spread across the ViT-L backbone's 24 transformer blocks. A
+    roofline check ruled out compute/bandwidth saturation as the explanation
+    for the shrinking TRT/PyTorch speedup ratio (efficiency never exceeds
+    41% of either theoretical floor at any batch size); the actual
+    mechanism is a batching efficiency gain shared by both backends'
+    GEMMs, which amortizes away PyTorch's per-op overhead disadvantage
+    faster than it erodes TensorRT's fixed fusion advantage. See
+    `profiling/README.md` for the full evidence chain.
+18. **TensorRT INT8 and the async video pipeline have NOT yet been built**
+    and are not represented as completed anywhere in this repo.
 
 ## Roadmap
 
-- **Stage 5** — GPU profiling (Nsight Systems/Compute) of the best-performing
-  TensorRT FP16 configuration found in Stage 4, to explain *why* it's fast,
-  not just that it is.
 - **Stage 6** — TensorRT INT8: calibration dataset design, then accuracy vs.
   performance tradeoff against the same golden reference used throughout.
-- **Stage 7** — find the actual production configuration (batch size that
+  **Gate A (calibration corpus) is complete** — see
+  [`calibration/README.md`](calibration/README.md). Gates B–D (INT8 engine
+  build, numerical equivalence, precision audit) are not.
+- **Stage 7** — a real synchronous video pipeline (decode → YOLO → crop →
+  TensorRT → pose decode) to see whether Stage 5's postprocessing-share
+  finding actually becomes the bottleneck once decode+detection are added.
+- **Stage 8** — asynchronous multi-worker pipeline (decoupled queues,
+  micro-batching, pinned memory + dual CUDA streams), benchmarked against
+  Stage 7's synchronous baseline.
+- **Stage 9** — find the actual production configuration (batch size that
   maximizes useful throughput given a real workload's crop-count distribution).
-- **Stage 8** — asynchronous multi-worker video pipeline (decode → YOLO →
-  batch formation → TensorRT → pose decode), benchmarked against the
-  synchronous baseline.
 
 ## Repo conventions
 

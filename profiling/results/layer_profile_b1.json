@@ -1,0 +1,1090 @@
+{
+  "batch": 1,
+  "label": "TensorRT IProfiler per-LAYER time (post-fusion layer names, not raw SM kernels)",
+  "caveat": "profiler attachment perturbs absolute latency -- only relative layer proportions are meaningful; NOT comparable to results/tensorrt/fp16 or deployment_stages numbers",
+  "num_iters": 50,
+  "total_layers": 180,
+  "sum_of_layer_means_ms": 5.0196287726657465,
+  "top_layers": [
+    {
+      "name": "node_MatMul_92+node_MatMul_126+node_MatMul_123+node_MatMul_120+node_MatMul_117+node_MatMul_115+node_MatMul_113_myl3_7",
+      "mean_ms_per_inference": 0.08278015822172165,
+      "share_of_total": 0.016491290884397422,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_279+node_MatMul_308+node_MatMul_306+node_MatMul_304+node_MatMul_302+node_MatMul_300+node_MatMul_298_myl3_22",
+      "mean_ms_per_inference": 0.08239615812897683,
+      "share_of_total": 0.016414791184890584,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_370+node_MatMul_399+node_MatMul_397+node_MatMul_395+node_MatMul_393+node_MatMul_391+node_MatMul_389_myl3_29",
+      "mean_ms_per_inference": 0.07939519718289376,
+      "share_of_total": 0.015816945989161224,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_552+node_MatMul_581+node_MatMul_579+node_MatMul_577+node_MatMul_575+node_MatMul_573+node_MatMul_571_myl3_43",
+      "mean_ms_per_inference": 0.07873535707592964,
+      "share_of_total": 0.015685494015948133,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_461+node_MatMul_490+node_MatMul_488+node_MatMul_486+node_MatMul_484+node_MatMul_482+node_MatMul_480_myl3_36",
+      "mean_ms_per_inference": 0.07866559699177741,
+      "share_of_total": 0.015671596557129644,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_734+node_MatMul_763+node_MatMul_761+node_MatMul_759+node_MatMul_757+node_MatMul_755+node_MatMul_753_myl3_57",
+      "mean_ms_per_inference": 0.07854399710893631,
+      "share_of_total": 0.015647371681476833,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_188+node_MatMul_217+node_MatMul_215+node_MatMul_213+node_MatMul_211+node_MatMul_209+node_MatMul_207_myl3_15",
+      "mean_ms_per_inference": 0.07852543711662292,
+      "share_of_total": 0.015643674198425005,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_825+node_MatMul_854+node_MatMul_852+node_MatMul_850+node_MatMul_848+node_MatMul_846+node_MatMul_844_myl3_64",
+      "mean_ms_per_inference": 0.07844287678599357,
+      "share_of_total": 0.015627226701136178,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1189+node_MatMul_1218+node_MatMul_1216+node_MatMul_1214+node_MatMul_1212+node_MatMul_1210+node_MatMul_1208_myl3_92",
+      "mean_ms_per_inference": 0.07837823703885079,
+      "share_of_total": 0.01561434930520308,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1007+node_MatMul_1036+node_MatMul_1034+node_MatMul_1032+node_MatMul_1030+node_MatMul_1028+node_MatMul_1026_myl3_78",
+      "mean_ms_per_inference": 0.07837759748101235,
+      "share_of_total": 0.015614221893821202,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1644+node_MatMul_1673+node_MatMul_1671+node_MatMul_1669+node_MatMul_1667+node_MatMul_1665+node_MatMul_1663_myl3_127",
+      "mean_ms_per_inference": 0.07837311744689941,
+      "share_of_total": 0.015613329390746606,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_916+node_MatMul_945+node_MatMul_943+node_MatMul_941+node_MatMul_939+node_MatMul_937+node_MatMul_935_myl3_71",
+      "mean_ms_per_inference": 0.07834239736199379,
+      "share_of_total": 0.015607209399349451,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_643+node_MatMul_672+node_MatMul_670+node_MatMul_668+node_MatMul_666+node_MatMul_664+node_MatMul_662_myl3_50",
+      "mean_ms_per_inference": 0.07834239691495895,
+      "share_of_total": 0.015607209310292101,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1826+node_MatMul_1855+node_MatMul_1853+node_MatMul_1851+node_MatMul_1849+node_MatMul_1847+node_MatMul_1845_myl3_141",
+      "mean_ms_per_inference": 0.0783033573627472,
+      "share_of_total": 0.015599431931928118,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1462+node_MatMul_1491+node_MatMul_1489+node_MatMul_1487+node_MatMul_1485+node_MatMul_1483+node_MatMul_1481_myl3_113",
+      "mean_ms_per_inference": 0.07829951733350754,
+      "share_of_total": 0.015598666929292751,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1280+node_MatMul_1309+node_MatMul_1307+node_MatMul_1305+node_MatMul_1303+node_MatMul_1301+node_MatMul_1299_myl3_99",
+      "mean_ms_per_inference": 0.07829887717962265,
+      "share_of_total": 0.01559853939916774,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_2099+node_MatMul_2128+node_MatMul_2126+node_MatMul_2124+node_MatMul_2122+node_MatMul_2120+node_MatMul_2118_myl3_162",
+      "mean_ms_per_inference": 0.07820927754044532,
+      "share_of_total": 0.015580689545476319,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_2190+node_MatMul_2219+node_MatMul_2217+node_MatMul_2215+node_MatMul_2213+node_MatMul_2211+node_MatMul_2209_myl3_169",
+      "mean_ms_per_inference": 0.0781062376499176,
+      "share_of_total": 0.015560162152875331,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1735+node_MatMul_1764+node_MatMul_1762+node_MatMul_1760+node_MatMul_1758+node_MatMul_1756+node_MatMul_1754_myl3_134",
+      "mean_ms_per_inference": 0.07809215769171715,
+      "share_of_total": 0.015557357172898103,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1553+node_MatMul_1582+node_MatMul_1580+node_MatMul_1578+node_MatMul_1576+node_MatMul_1574+node_MatMul_1572_myl3_120",
+      "mean_ms_per_inference": 0.07805887758731841,
+      "share_of_total": 0.015550727179744034,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_2008+node_MatMul_2037+node_MatMul_2035+node_MatMul_2033+node_MatMul_2031+node_MatMul_2029+node_MatMul_2027_myl3_155",
+      "mean_ms_per_inference": 0.0780563174188137,
+      "share_of_total": 0.015550217148301342,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1098+node_MatMul_1127+node_MatMul_1125+node_MatMul_1123+node_MatMul_1121+node_MatMul_1119+node_MatMul_1117_myl3_85",
+      "mean_ms_per_inference": 0.07791871801018715,
+      "share_of_total": 0.015522804880410966,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1371+node_MatMul_1400+node_MatMul_1398+node_MatMul_1396+node_MatMul_1394+node_MatMul_1392+node_MatMul_1390_myl3_106",
+      "mean_ms_per_inference": 0.07784831836819649,
+      "share_of_total": 0.015508780010210598,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1917+node_MatMul_1946+node_MatMul_1944+node_MatMul_1942+node_MatMul_1940+node_MatMul_1938+node_MatMul_1936_myl3_148",
+      "mean_ms_per_inference": 0.07761919915676117,
+      "share_of_total": 0.015463135357625337,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_convolution + node__native_batch_norm_legit_no_training__0 + node_relu",
+      "mean_ms_per_inference": 0.05581632032990456,
+      "share_of_total": 0.011119611201898203,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_6",
+      "mean_ms_per_inference": 0.05003711923956871,
+      "share_of_total": 0.009968290785176087,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_14",
+      "mean_ms_per_inference": 0.04927744083106518,
+      "share_of_total": 0.009816949233258874,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_133",
+      "mean_ms_per_inference": 0.049175680801272395,
+      "share_of_total": 0.009796676811850558,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_77",
+      "mean_ms_per_inference": 0.04897152125835419,
+      "share_of_total": 0.00975600457249494,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_21",
+      "mean_ms_per_inference": 0.048949121013283727,
+      "share_of_total": 0.009751542042279073,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_conv2d",
+      "mean_ms_per_inference": 0.04891584105789661,
+      "share_of_total": 0.00974491207881079,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_161",
+      "mean_ms_per_inference": 0.04887872114777565,
+      "share_of_total": 0.009737517127550032,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_49",
+      "mean_ms_per_inference": 0.048870401456952095,
+      "share_of_total": 0.009735859696054528,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_105",
+      "mean_ms_per_inference": 0.04886528126895428,
+      "share_of_total": 0.009734839662854922,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_28",
+      "mean_ms_per_inference": 0.04869504116475582,
+      "share_of_total": 0.009700924783506574,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_154",
+      "mean_ms_per_inference": 0.04862528122961521,
+      "share_of_total": 0.009687027354373868,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_112",
+      "mean_ms_per_inference": 0.048524161279201505,
+      "share_of_total": 0.009666882448247672,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_63",
+      "mean_ms_per_inference": 0.048384001180529594,
+      "share_of_total": 0.009638960045014359,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_126",
+      "mean_ms_per_inference": 0.04833984136581421,
+      "share_of_total": 0.009630162618607876,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_147",
+      "mean_ms_per_inference": 0.048320641294121745,
+      "share_of_total": 0.009626337620273933,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_140",
+      "mean_ms_per_inference": 0.048314881324768064,
+      "share_of_total": 0.009625190131163773,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_84",
+      "mean_ms_per_inference": 0.04829760119318962,
+      "share_of_total": 0.00962174761930462,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_98",
+      "mean_ms_per_inference": 0.04825408138334751,
+      "share_of_total": 0.009613077693337366,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_35",
+      "mean_ms_per_inference": 0.04825088135898113,
+      "share_of_total": 0.009612440191141228,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_91",
+      "mean_ms_per_inference": 0.04823936112225056,
+      "share_of_total": 0.009610145153549342,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_119",
+      "mean_ms_per_inference": 0.04823552131652832,
+      "share_of_total": 0.00960938019544265,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_168",
+      "mean_ms_per_inference": 0.04821952112019062,
+      "share_of_total": 0.009606192669619063,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_70",
+      "mean_ms_per_inference": 0.04821312136948109,
+      "share_of_total": 0.00960491772459835,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_56",
+      "mean_ms_per_inference": 0.04817472122609615,
+      "share_of_total": 0.00959726772793046,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_FcMulCastErfCastAddMulMul_myl3_42",
+      "mean_ms_per_inference": 0.048108161315321925,
+      "share_of_total": 0.009584007800993895,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_convolution_1 + node__native_batch_norm_legit_no_training_1__0 + node_relu_1",
+      "mean_ms_per_inference": 0.03449792042374611,
+      "share_of_total": 0.006872603928721504,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_326+node_MatMul_318+node_MatMul_310_myl3_24",
+      "mean_ms_per_inference": 0.033976320326328274,
+      "share_of_total": 0.006768691842581151,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_144+node_MatMul_136+node_MatMul_128_myl3_10",
+      "mean_ms_per_inference": 0.033877120316028596,
+      "share_of_total": 0.006748929422929748,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1327+node_MatMul_1319+node_MatMul_1311_myl3_101",
+      "mean_ms_per_inference": 0.03334272004663944,
+      "share_of_total": 0.006642467313161947,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_235+node_MatMul_227+node_MatMul_219_myl3_17",
+      "mean_ms_per_inference": 0.03328512012958527,
+      "share_of_total": 0.00663099237753168,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1418+node_MatMul_1410+node_MatMul_1402_myl3_108",
+      "mean_ms_per_inference": 0.03328000009059906,
+      "share_of_total": 0.006629972374017857,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_2055+node_MatMul_2047+node_MatMul_2039_myl3_157",
+      "mean_ms_per_inference": 0.033267200142145154,
+      "share_of_total": 0.006627422394919082,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1782+node_MatMul_1774+node_MatMul_1766_myl3_136",
+      "mean_ms_per_inference": 0.033259520083665846,
+      "share_of_total": 0.006625892389648348,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1691+node_MatMul_1683+node_MatMul_1675_myl3_129",
+      "mean_ms_per_inference": 0.033205120116472246,
+      "share_of_total": 0.006615054941371329,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_2146+node_MatMul_2138+node_MatMul_2130_myl3_164",
+      "mean_ms_per_inference": 0.033177600055932996,
+      "share_of_total": 0.006609572452170313,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_690+node_MatMul_682+node_MatMul_674_myl3_52",
+      "mean_ms_per_inference": 0.03315712004899979,
+      "share_of_total": 0.006605492467800805,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_599+node_MatMul_591+node_MatMul_583_myl3_45",
+      "mean_ms_per_inference": 0.03312384009361267,
+      "share_of_total": 0.0065988625043325215,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1054+node_MatMul_1046+node_MatMul_1038_myl3_80",
+      "mean_ms_per_inference": 0.03299327999353409,
+      "share_of_total": 0.006572852592844736,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_963+node_MatMul_955+node_MatMul_947_myl3_73",
+      "mean_ms_per_inference": 0.032959360033273696,
+      "share_of_total": 0.006566095128937225,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1873+node_MatMul_1865+node_MatMul_1857_myl3_143",
+      "mean_ms_per_inference": 0.03289728000760078,
+      "share_of_total": 0.0065537276753894706,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_45+node_MatMul_37+node_MatMul_29_myl3_2",
+      "mean_ms_per_inference": 0.032714239954948425,
+      "share_of_total": 0.006517262816942348,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1600+node_MatMul_1592+node_MatMul_1584_myl3_122",
+      "mean_ms_per_inference": 0.03260799989104271,
+      "share_of_total": 0.006496097892459438,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1145+node_MatMul_1137+node_MatMul_1129_myl3_87",
+      "mean_ms_per_inference": 0.032587519884109496,
+      "share_of_total": 0.006492017908089929,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1964+node_MatMul_1956+node_MatMul_1948_myl3_150",
+      "mean_ms_per_inference": 0.0325331199169159,
+      "share_of_total": 0.00648118045981291,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_872+node_MatMul_864+node_MatMul_856_myl3_66",
+      "mean_ms_per_inference": 0.032463999837636946,
+      "share_of_total": 0.006467410501433649,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_781+node_MatMul_773+node_MatMul_765_myl3_59",
+      "mean_ms_per_inference": 0.03244351983070373,
+      "share_of_total": 0.0064633305170641395,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_417+node_MatMul_409+node_MatMul_401_myl3_31",
+      "mean_ms_per_inference": 0.032428799867630004,
+      "share_of_total": 0.006460398036647682,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_508+node_MatMul_500+node_MatMul_492_myl3_38",
+      "mean_ms_per_inference": 0.032413439899683,
+      "share_of_total": 0.006457338055791997,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1509+node_MatMul_1501+node_MatMul_1493_myl3_115",
+      "mean_ms_per_inference": 0.03240767985582352,
+      "share_of_total": 0.006456190551838947,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1236+node_MatMul_1228+node_MatMul_1220_myl3_94",
+      "mean_ms_per_inference": 0.032372479885816575,
+      "share_of_total": 0.00644917808705298,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_177_myl3_12",
+      "mean_ms_per_inference": 0.01722368024289608,
+      "share_of_total": 0.0034312657415399256,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_81_myl3_4",
+      "mean_ms_per_inference": 0.015441919695585966,
+      "share_of_total": 0.003076307112524839,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_905_myl3_68",
+      "mean_ms_per_inference": 0.015421439725905657,
+      "share_of_total": 0.0030722271355767767,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_541_myl3_40",
+      "mean_ms_per_inference": 0.015400959756225347,
+      "share_of_total": 0.0030681471586287137,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1269_myl3_96",
+      "mean_ms_per_inference": 0.015380479749292136,
+      "share_of_total": 0.0030640671742592053,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1633_myl3_124",
+      "mean_ms_per_inference": 0.015359999742358924,
+      "share_of_total": 0.0030599871898896965,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1997_myl3_152",
+      "mean_ms_per_inference": 0.015359999742358924,
+      "share_of_total": 0.0030599871898896965,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_3",
+      "mean_ms_per_inference": 0.015084159802645445,
+      "share_of_total": 0.0030050349310263404,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1360_myl3_103",
+      "mean_ms_per_inference": 0.015062399841845035,
+      "share_of_total": 0.0030006999569105446,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1724_myl3_131",
+      "mean_ms_per_inference": 0.01491263983771205,
+      "share_of_total": 0.00297086508048532,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1178_myl3_89",
+      "mean_ms_per_inference": 0.014877439998090268,
+      "share_of_total": 0.0029638526416744136,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_2179_myl3_166",
+      "mean_ms_per_inference": 0.01485119991004467,
+      "share_of_total": 0.0029586251459304083,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_450_myl3_33",
+      "mean_ms_per_inference": 0.014850559905171394,
+      "share_of_total": 0.00295849764549118,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_632_myl3_47",
+      "mean_ms_per_inference": 0.014831359907984733,
+      "share_of_total": 0.0029546726620001272,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_2088_myl3_159",
+      "mean_ms_per_inference": 0.014815359972417355,
+      "share_of_total": 0.00295148518812666,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1542_myl3_117",
+      "mean_ms_per_inference": 0.014814719967544078,
+      "share_of_total": 0.0029513576876874317,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_814_myl3_61",
+      "mean_ms_per_inference": 0.0147686399333179,
+      "share_of_total": 0.0029421777191453147,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_359_myl3_26",
+      "mean_ms_per_inference": 0.014745600000023841,
+      "share_of_total": 0.002937587751572509,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_996_myl3_75",
+      "mean_ms_per_inference": 0.01468927999958396,
+      "share_of_total": 0.002926367798267083,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1451_myl3_110",
+      "mean_ms_per_inference": 0.014688640031963587,
+      "share_of_total": 0.0029262403052493008,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_268_myl3_19",
+      "mean_ms_per_inference": 0.014688639994710683,
+      "share_of_total": 0.002926240297827855,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1815_myl3_138",
+      "mean_ms_per_inference": 0.014668159987777471,
+      "share_of_total": 0.002922160313458346,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_11",
+      "mean_ms_per_inference": 0.014625920020043849,
+      "share_of_total": 0.0029137453549730415,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1906_myl3_145",
+      "mean_ms_per_inference": 0.014568960070610046,
+      "share_of_total": 0.0029023979123605566,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_723_myl3_54",
+      "mean_ms_per_inference": 0.01454080007970333,
+      "share_of_total": 0.002896787937563205,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_MatMul_1087_myl3_82",
+      "mean_ms_per_inference": 0.014481280092149973,
+      "share_of_total": 0.0028849304894830855,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "Reformatting CopyNode for Input Tensor 0 to node_conv2d",
+      "mean_ms_per_inference": 0.014351360015571118,
+      "share_of_total": 0.00285904808214525,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_88",
+      "mean_ms_per_inference": 0.014138880036771297,
+      "share_of_total": 0.002816718262865212,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_102",
+      "mean_ms_per_inference": 0.014051840044558048,
+      "share_of_total": 0.002799378336716246,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_116",
+      "mean_ms_per_inference": 0.014051200095564128,
+      "share_of_total": 0.0027992508474091867,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_18",
+      "mean_ms_per_inference": 0.014012160059064627,
+      "share_of_total": 0.0027914733725664075,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_165",
+      "mean_ms_per_inference": 0.013998720031231641,
+      "share_of_total": 0.0027887958781855136,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_144",
+      "mean_ms_per_inference": 0.013992960024625063,
+      "share_of_total": 0.0027876483816539083,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_74",
+      "mean_ms_per_inference": 0.013977600038051605,
+      "share_of_total": 0.0027845883970874998,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_46",
+      "mean_ms_per_inference": 0.013974400069564581,
+      "share_of_total": 0.002783950906023529,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_130",
+      "mean_ms_per_inference": 0.013973120097070933,
+      "share_of_total": 0.0027836959125665194,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_81",
+      "mean_ms_per_inference": 0.013969280049204827,
+      "share_of_total": 0.0027829309062204293,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_109",
+      "mean_ms_per_inference": 0.013969280049204827,
+      "share_of_total": 0.0027829309062204293,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_67",
+      "mean_ms_per_inference": 0.013968000058084726,
+      "share_of_total": 0.002782675909052696,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_53",
+      "mean_ms_per_inference": 0.013930240087211132,
+      "share_of_total": 0.0027751534462205412,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_25",
+      "mean_ms_per_inference": 0.013928320035338402,
+      "share_of_total": 0.0027747709374814117,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_137",
+      "mean_ms_per_inference": 0.013896320052444934,
+      "share_of_total": 0.0027683959674701386,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_158",
+      "mean_ms_per_inference": 0.013890560027211904,
+      "share_of_total": 0.002767248467227811,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_60",
+      "mean_ms_per_inference": 0.013873920068144798,
+      "share_of_total": 0.0027639334892043924,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_32",
+      "mean_ms_per_inference": 0.01384704004973173,
+      "share_of_total": 0.0027585785078640505,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_39",
+      "mean_ms_per_inference": 0.0138374400511384,
+      "share_of_total": 0.002756666016118524,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_123",
+      "mean_ms_per_inference": 0.013831040002405643,
+      "share_of_total": 0.0027553910117262452,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_95",
+      "mean_ms_per_inference": 0.013807360008358955,
+      "share_of_total": 0.0027506735325820435,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "_gemm_mha_v2_myl3_151",
+      "mean_ms_per_inference": 0.013806080035865307,
+      "share_of_total": 0.0027504185391250334,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "node_conv2d_1",
+      "mean_ms_per_inference": 0.007950080009177327,
+      "share_of_total": 0.0015837983980945512,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddSqrtDivMulCastMulAddTran_myl3_171",
+      "mean_ms_per_inference": 0.006860800134018063,
+      "share_of_total": 0.0013667943277754654,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_1",
+      "mean_ms_per_inference": 0.006787840137258172,
+      "share_of_total": 0.001352259389025175,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMean_myl3_170",
+      "mean_ms_per_inference": 0.006536320149898529,
+      "share_of_total": 0.001302152100468442,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_114",
+      "mean_ms_per_inference": 0.00626880019903183,
+      "share_of_total": 0.0012488573324721567,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_149",
+      "mean_ms_per_inference": 0.006259200172498822,
+      "share_of_total": 0.0012469448351605458,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_128",
+      "mean_ms_per_inference": 0.006256640143692494,
+      "share_of_total": 0.001246434831548273,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_16",
+      "mean_ms_per_inference": 0.006218240167945623,
+      "share_of_total": 0.00123878486827689,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_65",
+      "mean_ms_per_inference": 0.006146560171619058,
+      "share_of_total": 0.001224504928549694,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_9",
+      "mean_ms_per_inference": 0.006126080164685846,
+      "share_of_total": 0.0012204249441801853,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_86",
+      "mean_ms_per_inference": 0.00612608015537262,
+      "share_of_total": 0.0012204249423248238,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_30",
+      "mean_ms_per_inference": 0.006069120177999139,
+      "share_of_total": 0.0012090774941462543,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_58",
+      "mean_ms_per_inference": 0.006064000129699707,
+      "share_of_total": 0.0012080574887770698,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_ReshTran_myl3_0",
+      "mean_ms_per_inference": 0.006040320107713342,
+      "share_of_total": 0.0012033400040667834,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_79",
+      "mean_ms_per_inference": 0.0060320001561194655,
+      "share_of_total": 0.0012016825206211583,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_156",
+      "mean_ms_per_inference": 0.0060249601677060125,
+      "share_of_total": 0.001200280028777182,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_163",
+      "mean_ms_per_inference": 0.00602112015709281,
+      "share_of_total": 0.0011995150298525377,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_51",
+      "mean_ms_per_inference": 0.006000640168786049,
+      "share_of_total": 0.0011954350491937518,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_135",
+      "mean_ms_per_inference": 0.006000640140846372,
+      "share_of_total": 0.0011954350436276676,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_93",
+      "mean_ms_per_inference": 0.005992320133373141,
+      "share_of_total": 0.001193777549049874,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_121",
+      "mean_ms_per_inference": 0.0059814401343464855,
+      "share_of_total": 0.0011916100582812532,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_23",
+      "mean_ms_per_inference": 0.005980160152539611,
+      "share_of_total": 0.0011913550629688817,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_100",
+      "mean_ms_per_inference": 0.005963520128279925,
+      "share_of_total": 0.0011880400719579331,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_37",
+      "mean_ms_per_inference": 0.005960320131853223,
+      "share_of_total": 0.001187402575327878,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_107",
+      "mean_ms_per_inference": 0.005943040149286389,
+      "share_of_total": 0.0011839600931545086,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_44",
+      "mean_ms_per_inference": 0.005942400144413114,
+      "share_of_total": 0.0011838325927152808,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_142",
+      "mean_ms_per_inference": 0.005921920146793127,
+      "share_of_total": 0.0011797526102011336,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_MulMulMulMulMulMulAddAddAddAddAddAddConcAddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_72",
+      "mean_ms_per_inference": 0.005884160129353404,
+      "share_of_total": 0.0011722301380921712,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_111",
+      "mean_ms_per_inference": 0.005849600089713931,
+      "share_of_total": 0.001165345158902541,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_97",
+      "mean_ms_per_inference": 0.005724800080060959,
+      "share_of_total": 0.0011404827606446126,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_48",
+      "mean_ms_per_inference": 0.005706880064681172,
+      "share_of_total": 0.001136912772465931,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_76",
+      "mean_ms_per_inference": 0.005664000054821372,
+      "share_of_total": 0.001128370306119953,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_118",
+      "mean_ms_per_inference": 0.0056364800408482555,
+      "share_of_total": 0.001122887826195745,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_27",
+      "mean_ms_per_inference": 0.005617280043661594,
+      "share_of_total": 0.001119062842704692,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_90",
+      "mean_ms_per_inference": 0.00559808000922203,
+      "share_of_total": 0.0011152378517921932,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_104",
+      "mean_ms_per_inference": 0.005578880030661822,
+      "share_of_total": 0.0011114128720118633,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_146",
+      "mean_ms_per_inference": 0.0055539199896156785,
+      "share_of_total": 0.0011064403845677593,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_167",
+      "mean_ms_per_inference": 0.005537279983982444,
+      "share_of_total": 0.0011031253972675337,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_20",
+      "mean_ms_per_inference": 0.005532800015062094,
+      "share_of_total": 0.0011022329071804688,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_139",
+      "mean_ms_per_inference": 0.005531520014628768,
+      "share_of_total": 0.0011019779081573742,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_132",
+      "mean_ms_per_inference": 0.005500799994915723,
+      "share_of_total": 0.00109585792974775,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_153",
+      "mean_ms_per_inference": 0.005495040006935597,
+      "share_of_total": 0.0010947104369268678,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_160",
+      "mean_ms_per_inference": 0.005471999971196056,
+      "share_of_total": 0.0010901204489450862,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_125",
+      "mean_ms_per_inference": 0.0054559999704360965,
+      "share_of_total": 0.0010869329620840883,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_83",
+      "mean_ms_per_inference": 0.005447679981589317,
+      "share_of_total": 0.0010852754712170176,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_13",
+      "mean_ms_per_inference": 0.005432319976389408,
+      "share_of_total": 0.001082215482939886,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_34",
+      "mean_ms_per_inference": 0.005431679980829358,
+      "share_of_total": 0.0010820879843560195,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_41",
+      "mean_ms_per_inference": 0.005431039985269308,
+      "share_of_total": 0.0010819604857721533,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_62",
+      "mean_ms_per_inference": 0.0054297599755227565,
+      "share_of_total": 0.0010817054848936973,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_55",
+      "mean_ms_per_inference": 0.005428479975089431,
+      "share_of_total": 0.0010814504858706032,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_5",
+      "mean_ms_per_inference": 0.00538559996522963,
+      "share_of_total": 0.001072908019524625,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_AddCastMeanSubMulMeanAddSqrtDivMulCastMulAdd_myl3_69",
+      "mean_ms_per_inference": 0.005345279946923256,
+      "share_of_total": 0.001064875549369474,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "Reformatting CopyNode for Input Tensor 0 to node_convolution + node__native_batch_norm_legit_no_training__0 + node_relu",
+      "mean_ms_per_inference": 0.005122559899464249,
+      "share_of_total": 0.0010205057249171516,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "Reformatting CopyNode for Input Tensor 1 to {ForeignNode[node_view_120...node_view_121]}",
+      "mean_ms_per_inference": 0.004578559938818216,
+      "share_of_total": 0.0009121311846307523,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "Reformatting CopyNode for Output Tensor 0 to node_conv2d_1",
+      "mean_ms_per_inference": 0.004175999984145164,
+      "share_of_total": 0.0008319340280471457,
+      "calls_per_inference": 1.0
+    },
+    {
+      "name": "__myl_ReshEqlCastEqlCastEqlCastEqlCastEqlCastEqlCast_myl3_8",
+      "mean_ms_per_inference": 0.004038400002755225,
+      "share_of_total": 0.0008045216460520394,
+      "calls_per_inference": 1.0
+    }
+  ]
+}
