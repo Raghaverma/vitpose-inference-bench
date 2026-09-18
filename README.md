@@ -484,19 +484,42 @@ Outputs land in `golden/distinct_crops.npy` + `distinct_pytorch_fp16_outputs.npy
     background heatmap pixel far from any joint peak, not a real
     regression -- confirmed by keypoint-level agreement (0.06px mean / 0.25px
     max) staying far inside its own thresholds either way.
-12. **TensorRT INT8 has NOT yet been benchmarked** and is not represented as
-    completed anywhere in this repo -- the architecture diagram above draws
-    it dashed and unfilled, with no numeric value. The TensorRT batch-size
-    matrix (1/2/4/8/16) is also not yet built, though a static re-export at
-    batch=2 was confirmed to succeed, so it's a scoped next step, not a
-    blocked one.
+12. Every batch>1 measurement in this project before Stage 4 (Stage 1's
+    PyTorch sweep) used `.repeat()` -- B copies of one crop -- which cannot
+    detect cross-batch-element bugs. Stage 4 built a 16-slot fixture of
+    GENUINELY DISTINCT crops with a mixed `dataset_index` per slot
+    (`golden/build_distinct_batch.py`) specifically to test the model's MoE
+    routing and windowed-attention paths at batch>1; every slot, at every
+    batch size, for every backend, passed.
+13. **TensorRT's speedup over PyTorch shrinks dramatically as batch size
+    grows**: 4.17x at batch=1, roughly 1.3x at batch=8/16. PyTorch eager
+    mode's own batching amortizes overhead far more effectively than its
+    per-image cost at batch=1 suggested. This is the actual answer to "does
+    TensorRT retain its advantage at batch>1" -- mostly not, past batch=4.
+14. Neither ONNX Runtime's nor TensorRT's throughput curve is monotonic:
+    ORT peaks at batch=8 (186.9 FPS) and drops at batch=16 (173.2); TensorRT
+    dips slightly at batch=8 (290.2) before rising again at batch=16
+    (310.8). Don't extrapolate either curve.
+15. TensorRT's steady-state VRAM barely moves across the batch sweep
+    (2849MB → 2949MB, batch 1→16) because engine weights (~833MB) and the
+    CUDA context's fixed overhead dominate; only the activation workspace
+    TensorRT itself declares (5.0MB → 67.5MB) actually scales with batch.
+16. **TensorRT INT8, GPU profiling, and the async video pipeline have NOT
+    yet been built** and are not represented as completed anywhere in this
+    repo.
 
 ## Roadmap
 
-- **Stage 3 (continued)** — TensorRT batch-size matrix (1/2/4/8/16) compared
-  against Stage 1's PyTorch batch curve, then TensorRT INT8 with calibration.
-- **Stage 4** — video pipeline: batching, an async pipeline, GPU profiling,
-  and optimization based on what profiling shows.
+- **Stage 5** — GPU profiling (Nsight Systems/Compute) of the best-performing
+  TensorRT FP16 configuration found in Stage 4, to explain *why* it's fast,
+  not just that it is.
+- **Stage 6** — TensorRT INT8: calibration dataset design, then accuracy vs.
+  performance tradeoff against the same golden reference used throughout.
+- **Stage 7** — find the actual production configuration (batch size that
+  maximizes useful throughput given a real workload's crop-count distribution).
+- **Stage 8** — asynchronous multi-worker video pipeline (decode → YOLO →
+  batch formation → TensorRT → pose decode), benchmarked against the
+  synchronous baseline.
 
 ## Repo conventions
 
