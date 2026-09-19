@@ -1,0 +1,76 @@
+{
+  "model": "ViTPose++-L",
+  "stage": "Stage 6B -- INT8 TensorRT engine build",
+  "source": "vitpose_plus_l_int8_qdq.onnx",
+  "onnx_sha256": "beec81c36829e250d2b9ea04fcafd8afcf48a2c37a2edf373b77405786653d38",
+  "calibration_manifest_sha256": "4901177581709e86f254aacdcccee9bdad881365c6684311046a8cb806a97cc3",
+  "calibration_sample_count": 96,
+  "calibration_per_expert_counts": {
+    "0": 16,
+    "1": 16,
+    "2": 16,
+    "3": 16,
+    "4": 16,
+    "5": 16
+  },
+  "calibration_corpus_label": "Engineering calibration corpus -- single-source, augmentation-diverse (see calibration/README.md)",
+  "quantization_config": {
+    "tool": "onnxruntime.quantization.quantize_static",
+    "quant_format": "QDQ",
+    "calibrate_method": "Entropy",
+    "activation_type": "QInt8",
+    "weight_type": "QInt8",
+    "per_channel": false,
+    "activation_symmetric": true,
+    "weight_symmetric": true,
+    "quantize_bias": false,
+    "op_types_to_quantize": "ORT default (unrestricted -- see module docstring)",
+    "calibration_provider": "CPUExecutionProvider",
+    "calibration_stride": 8
+  },
+  "engine_path": "/home/ubuntu/TensorRT/engines/vitpose_b1_int8.engine",
+  "engine_sha256": "df4d7d9343e64ac0ceb05c6735c1c5d8507814396e0cc0012e3c49a48eb8b656",
+  "precision_requested": "INT8 (strongly-typed network, explicit Q/DQ graph from conversion/quantize_onnx.py -- see that script and this one's module docstrings for why there is no BuilderFlag.INT8 step here)",
+  "mode": "tuned",
+  "benchmarkable": true,
+  "batch": 1,
+  "opset": {
+    "ai.onnx": 18
+  },
+  "build_wall_clock_s": 33.86659554997459,
+  "builder_optimization_level": 3,
+  "build_timestamp_utc": "2026-09-18T18:19:52.280705+00:00",
+  "vram": {
+    "engine_file_size_mb": 498.4385414123535,
+    "activation_workspace_mb": 4.173828125,
+    "build_phase_vram_delta_mb": 340.0,
+    "note": "same three physically distinct figures as conversion/build_engine.py's FP16 metadata -- see that script's docstring."
+  },
+  "precision_audit": {
+    "total_layers": 546,
+    "layer_precision_histogram": {
+      "Int8": 470,
+      "Half": 27,
+      "Half+Int8": 48,
+      "Float": 1
+    },
+    "int8_layers": 470,
+    "fp16_layers": 27,
+    "fp32_layers": 1,
+    "mixed_precision_layers": 48,
+    "fraction_int8": 0.8608058608058609,
+    "fraction_fp16": 0.04945054945054945,
+    "fraction_fp32": 0.0018315018315018315,
+    "fraction_mixed": 0.08791208791208792,
+    "note": "Classified by each layer's OUTPUT tensor Datatype(s), same technique as conversion/build_engine.py's FP16 precision_audit -- 'mixed' layers (e.g. Half+Int8) straddle a quantize/dequantize boundary and are NOT folded into either the int8 or fp16 count."
+  },
+  "env": {
+    "python": "3.12.3",
+    "tensorrt_version": "11.3.0.99",
+    "torch": "2.14.0+cu130",
+    "cuda_runtime": "13.0",
+    "gpu_name": "NVIDIA L4",
+    "gpu_driver_version": "595.84",
+    "compute_capability": "8.9"
+  }
+}

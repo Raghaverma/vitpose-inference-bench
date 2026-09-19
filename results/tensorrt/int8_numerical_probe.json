@@ -1,0 +1,504 @@
+{
+  "pytorch_fp16_vs_trt_int8": {
+    "candidate": "TensorRT INT8 vs PyTorch FP16 golden",
+    "golden_env": {
+      "python": "3.12.3",
+      "torch": "2.14.0+cu130",
+      "torch_cuda": "13.0",
+      "cudnn": 92400,
+      "transformers": "5.17.0",
+      "ultralytics": "8.4.155",
+      "gpu_name": "NVIDIA L4",
+      "nvidia_driver": "595.84",
+      "golden_runs_verified_bit_identical": 5,
+      "input_shape": [
+        1,
+        3,
+        256,
+        192
+      ],
+      "output_shape": [
+        1,
+        17,
+        64,
+        48
+      ],
+      "output_dtype": "torch.float16",
+      "box_xywh": [
+        430.82086181640625,
+        164.86526489257812,
+        395.2178955078125,
+        140.6436767578125
+      ]
+    },
+    "tensor_diff": {
+      "max_abs_error": 0.93603515625,
+      "mean_abs_error": 0.012687664479017258,
+      "rmse": 0.057105325162410736,
+      "max_rel_error": 253.7828826904297,
+      "rel_error_threshold": 0.001
+    },
+    "keypoint_diff": {
+      "per_joint": [
+        {
+          "joint": "nose",
+          "golden_xy": [
+            475.46197509765625,
+            286.8873596191406
+          ],
+          "candidate_xy": [
+            493.09130859375,
+            249.61245727539062
+          ],
+          "euclidean_distance_px": 41.233623952456476
+        },
+        {
+          "joint": "left_eye",
+          "golden_xy": [
+            469.3294677734375,
+            284.2487487792969
+          ],
+          "candidate_xy": [
+            492.99993896484375,
+            245.09866333007812
+          ],
+          "euclidean_distance_px": 45.74953985674963
+        },
+        {
+          "joint": "right_eye",
+          "golden_xy": [
+            468.90899658203125,
+            284.4408264160156
+          ],
+          "candidate_xy": [
+            489.26422119140625,
+            248.18850708007812
+          ],
+          "euclidean_distance_px": 41.57602465523723
+        },
+        {
+          "joint": "left_ear",
+          "golden_xy": [
+            471.48760986328125,
+            270.8644104003906
+          ],
+          "candidate_xy": [
+            610.9476928710938,
+            261.5315246582031
+          ],
+          "euclidean_distance_px": 139.77201976369477
+        },
+        {
+          "joint": "right_ear",
+          "golden_xy": [
+            469.81549072265625,
+            251.68045043945312
+          ],
+          "candidate_xy": [
+            570.0654907226562,
+            222.82766723632812
+          ],
+          "euclidean_distance_px": 104.31944017567642
+        },
+        {
+          "joint": "left_shoulder",
+          "golden_xy": [
+            515.0711669921875,
+            254.00033569335938
+          ],
+          "candidate_xy": [
+            617.4561157226562,
+            200.68984985351562
+          ],
+          "euclidean_distance_px": 115.43260209759154
+        },
+        {
+          "joint": "right_shoulder",
+          "golden_xy": [
+            507.313232421875,
+            252.51364135742188
+          ],
+          "candidate_xy": [
+            609.6290893554688,
+            205.55288696289062
+          ],
+          "euclidean_distance_px": 112.57818187090743
+        },
+        {
+          "joint": "left_elbow",
+          "golden_xy": [
+            588.3331909179688,
+            245.26242065429688
+          ],
+          "candidate_xy": [
+            658.3795776367188,
+            245.33010864257812
+          ],
+          "euclidean_distance_px": 70.04641942323985
+        },
+        {
+          "joint": "right_elbow",
+          "golden_xy": [
+            576.4196166992188,
+            247.41433715820312
+          ],
+          "candidate_xy": [
+            573.4052734375,
+            224.33718872070312
+          ],
+          "euclidean_distance_px": 23.273182964645766
+        },
+        {
+          "joint": "left_wrist",
+          "golden_xy": [
+            631.9022827148438,
+            255.29275512695312
+          ],
+          "candidate_xy": [
+            702.4938354492188,
+            247.38528442382812
+          ],
+          "euclidean_distance_px": 71.03305857395434
+        },
+        {
+          "joint": "right_wrist",
+          "golden_xy": [
+            599.1785888671875,
+            266.6388244628906
+          ],
+          "candidate_xy": [
+            498.50701904296875,
+            254.01345825195312
+          ],
+          "euclidean_distance_px": 101.46016382222548
+        },
+        {
+          "joint": "left_hip",
+          "golden_xy": [
+            616.4016723632812,
+            217.23916625976562
+          ],
+          "candidate_xy": [
+            598.9375,
+            230.30264282226562
+          ],
+          "euclidean_distance_px": 21.809441447074782
+        },
+        {
+          "joint": "right_hip",
+          "golden_xy": [
+            613.5125122070312,
+            218.10311889648438
+          ],
+          "candidate_xy": [
+            588.5144653320312,
+            227.80526733398438
+          ],
+          "euclidean_distance_px": 26.814809935332022
+        },
+        {
+          "joint": "left_knee",
+          "golden_xy": [
+            703.6520385742188,
+            258.0359191894531
+          ],
+          "candidate_xy": [
+            616.6029663085938,
+            255.45046997070312
+          ],
+          "euclidean_distance_px": 87.08745908550058
+        },
+        {
+          "joint": "right_knee",
+          "golden_xy": [
+            703.9288330078125,
+            247.82327270507812
+          ],
+          "candidate_xy": [
+            663.4453735351562,
+            278.6316223144531
+          ],
+          "euclidean_distance_px": 50.873027200351245
+        },
+        {
+          "joint": "left_ankle",
+          "golden_xy": [
+            802.1443481445312,
+            255.66714477539062
+          ],
+          "candidate_xy": [
+            646.5308227539062,
+            256.7704162597656
+          ],
+          "euclidean_distance_px": 155.61743633817815
+        },
+        {
+          "joint": "right_ankle",
+          "golden_xy": [
+            795.4185180664062,
+            231.46340942382812
+          ],
+          "candidate_xy": [
+            800.7323608398438,
+            247.42385864257812
+          ],
+          "euclidean_distance_px": 16.821797296517143
+        }
+      ],
+      "mean_distance_px": 72.08813108584312,
+      "p95_distance_px": 142.94110307859142,
+      "max_distance_px": 155.61743633817815
+    }
+  },
+  "trt_fp16_vs_trt_int8": {
+    "candidate": "TensorRT INT8 vs TensorRT FP16",
+    "golden_env": {
+      "python": "3.12.3",
+      "torch": "2.14.0+cu130",
+      "torch_cuda": "13.0",
+      "cudnn": 92400,
+      "transformers": "5.17.0",
+      "ultralytics": "8.4.155",
+      "gpu_name": "NVIDIA L4",
+      "nvidia_driver": "595.84",
+      "golden_runs_verified_bit_identical": 5,
+      "input_shape": [
+        1,
+        3,
+        256,
+        192
+      ],
+      "output_shape": [
+        1,
+        17,
+        64,
+        48
+      ],
+      "output_dtype": "torch.float16",
+      "box_xywh": [
+        430.82086181640625,
+        164.86526489257812,
+        395.2178955078125,
+        140.6436767578125
+      ]
+    },
+    "tensor_diff": {
+      "max_abs_error": 0.93603515625,
+      "mean_abs_error": 0.012692092917859554,
+      "rmse": 0.057125210762023926,
+      "max_rel_error": 253.9849395751953,
+      "rel_error_threshold": 0.001
+    },
+    "keypoint_diff": {
+      "per_joint": [
+        {
+          "joint": "nose",
+          "golden_xy": [
+            475.4056396484375,
+            286.9133605957031
+          ],
+          "candidate_xy": [
+            493.09130859375,
+            249.61245727539062
+          ],
+          "euclidean_distance_px": 41.281233927227646
+        },
+        {
+          "joint": "left_eye",
+          "golden_xy": [
+            469.27032470703125,
+            284.2800598144531
+          ],
+          "candidate_xy": [
+            492.99993896484375,
+            245.09866333007812
+          ],
+          "euclidean_distance_px": 45.80694732560086
+        },
+        {
+          "joint": "right_eye",
+          "golden_xy": [
+            468.8558349609375,
+            284.4199523925781
+          ],
+          "candidate_xy": [
+            489.26422119140625,
+            248.18850708007812
+          ],
+          "euclidean_distance_px": 41.58388940400675
+        },
+        {
+          "joint": "left_ear",
+          "golden_xy": [
+            471.49298095703125,
+            270.9267883300781
+          ],
+          "candidate_xy": [
+            610.9476928710938,
+            261.5315246582031
+          ],
+          "euclidean_distance_px": 139.77083978605202
+        },
+        {
+          "joint": "right_ear",
+          "golden_xy": [
+            469.806884765625,
+            251.64492797851562
+          ],
+          "candidate_xy": [
+            570.0654907226562,
+            222.82766723632812
+          ],
+          "euclidean_distance_px": 104.31789197031583
+        },
+        {
+          "joint": "left_shoulder",
+          "golden_xy": [
+            515.1083374023438,
+            254.00796508789062
+          ],
+          "candidate_xy": [
+            617.4561157226562,
+            200.68984985351562
+          ],
+          "euclidean_distance_px": 115.40315913895044
+        },
+        {
+          "joint": "right_shoulder",
+          "golden_xy": [
+            507.34735107421875,
+            252.48660278320312
+          ],
+          "candidate_xy": [
+            609.6290893554688,
+            205.55288696289062
+          ],
+          "euclidean_distance_px": 112.53589501370651
+        },
+        {
+          "joint": "left_elbow",
+          "golden_xy": [
+            588.290283203125,
+            245.24710083007812
+          ],
+          "candidate_xy": [
+            658.3795776367188,
+            245.33010864257812
+          ],
+          "euclidean_distance_px": 70.08934358728102
+        },
+        {
+          "joint": "right_elbow",
+          "golden_xy": [
+            576.4501342773438,
+            247.46694946289062
+          ],
+          "candidate_xy": [
+            573.4052734375,
+            224.33718872070312
+          ],
+          "euclidean_distance_px": 23.32931652502602
+        },
+        {
+          "joint": "left_wrist",
+          "golden_xy": [
+            631.8673095703125,
+            255.34707641601562
+          ],
+          "candidate_xy": [
+            702.4938354492188,
+            247.38528442382812
+          ],
+          "euclidean_distance_px": 71.0738790938744
+        },
+        {
+          "joint": "right_wrist",
+          "golden_xy": [
+            598.9290161132812,
+            266.6603088378906
+          ],
+          "candidate_xy": [
+            498.50701904296875,
+            254.01345825195312
+          ],
+          "euclidean_distance_px": 101.21521785449498
+        },
+        {
+          "joint": "left_hip",
+          "golden_xy": [
+            616.40869140625,
+            217.23159790039062
+          ],
+          "candidate_xy": [
+            598.9375,
+            230.30264282226562
+          ],
+          "euclidean_distance_px": 21.819595424835402
+        },
+        {
+          "joint": "right_hip",
+          "golden_xy": [
+            613.5162353515625,
+            218.03030395507812
+          ],
+          "candidate_xy": [
+            588.5144653320312,
+            227.80526733398438
+          ],
+          "euclidean_distance_px": 26.84470922115734
+        },
+        {
+          "joint": "left_knee",
+          "golden_xy": [
+            703.7340698242188,
+            258.0130920410156
+          ],
+          "candidate_xy": [
+            616.6029663085938,
+            255.45046997070312
+          ],
+          "euclidean_distance_px": 87.16878014361455
+        },
+        {
+          "joint": "right_knee",
+          "golden_xy": [
+            703.9446411132812,
+            247.84591674804688
+          ],
+          "candidate_xy": [
+            663.4453735351562,
+            278.6316223144531
+          ],
+          "euclidean_distance_px": 50.87190129714068
+        },
+        {
+          "joint": "left_ankle",
+          "golden_xy": [
+            802.1919555664062,
+            255.63632202148438
+          ],
+          "candidate_xy": [
+            646.5308227539062,
+            256.7704162597656
+          ],
+          "euclidean_distance_px": 155.6652640707363
+        },
+        {
+          "joint": "right_ankle",
+          "golden_xy": [
+            795.4308471679688,
+            231.44815063476562
+          ],
+          "candidate_xy": [
+            800.7323608398438,
+            247.42385864257812
+          ],
+          "euclidean_distance_px": 16.832388231144208
+        }
+      ],
+      "mean_distance_px": 72.09472070677441,
+      "p95_distance_px": 142.94972464298885,
+      "max_distance_px": 155.6652640707363
+    }
+  }
+}

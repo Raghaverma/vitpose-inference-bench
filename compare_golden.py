@@ -84,6 +84,7 @@ def compare_outputs(golden: np.ndarray, candidate: np.ndarray, processor, box_xy
     tensor_report = {
         "max_abs_error": float(abs_err.max()),
         "mean_abs_error": float(abs_err.mean()),
+        "rmse": float(np.sqrt(np.mean(abs_err ** 2))),
         "max_rel_error": float(rel_err.max()) if rel_err.size else 0.0,
         "rel_error_threshold": rel_err_threshold,
     }
@@ -105,6 +106,11 @@ def compare_outputs(golden: np.ndarray, candidate: np.ndarray, processor, box_xy
     keypoint_report = {
         "per_joint": per_joint,
         "mean_distance_px": sum(distances) / len(distances),
+        # N=17 joints from one golden fixture -- np.percentile's default linear
+        # interpolation is a small-N approximation of "P95," not a claim of
+        # statistical robustness; reported anyway since it's what distinguishes
+        # "one outlier joint" from "broadly worse," which mean/max alone can't.
+        "p95_distance_px": float(np.percentile(distances, 95)),
         "max_distance_px": max(distances),
     }
 

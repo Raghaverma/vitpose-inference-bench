@@ -1,5 +1,17 @@
 # Stage 6, Gate A — TensorRT INT8 calibration corpus
 
+**Label this corpus explicitly wherever it's referenced downstream:
+"Engineering calibration corpus — single-source, augmentation-diverse."**
+Not "representative of the deployment distribution" — it isn't, and no
+language in this repo (this file, `manifest.json`, or any script that
+consumes it) should imply otherwise. It exists to validate the INT8
+calibration *machinery* (per-expert coverage, entropy-histogram collection,
+the TensorRT build path) against real activation statistics, not to make a
+claim about production pose/lighting/scene diversity. See
+[Source data](#source-data-synthetic-augmentation-of-one-real-crop-not-a-dataset)
+below for exactly what that means -- this corpus is a placeholder pending a
+held-out, multi-source pose-quality evaluation set (not yet built).
+
 ## What Gate A is, and isn't
 
 Gate A builds and documents the entropy-calibration corpus a TensorRT INT8

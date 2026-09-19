@@ -1,0 +1,113 @@
+{
+  "model": "ViTPose++-L",
+  "stage": "Stage 6 Gate B -- INT8 QDQ ONNX quantization",
+  "source_onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l.onnx",
+  "source_onnx_sha256": "097a1f4c9d63523764c65f91f67bf210eba582a0c119e2e861bf6bd9d6f328af",
+  "output_onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l_int8_qdq.onnx",
+  "output_onnx_sha256": "beec81c36829e250d2b9ea04fcafd8afcf48a2c37a2edf373b77405786653d38",
+  "calibration_manifest_path": "/home/ubuntu/TensorRT/calibration/manifest.json",
+  "calibration_manifest_sha256": "4901177581709e86f254aacdcccee9bdad881365c6684311046a8cb806a97cc3",
+  "calibration_sample_count": 96,
+  "calibration_per_expert_counts": {
+    "0": 16,
+    "1": 16,
+    "2": 16,
+    "3": 16,
+    "4": 16,
+    "5": 16
+  },
+  "calibration_corpus_label": "Engineering calibration corpus -- single-source, augmentation-diverse (see calibration/README.md)",
+  "quantization_config": {
+    "tool": "onnxruntime.quantization.quantize_static",
+    "quant_format": "QDQ",
+    "calibrate_method": "Entropy",
+    "activation_type": "QInt8",
+    "weight_type": "QInt8",
+    "per_channel": false,
+    "activation_symmetric": true,
+    "weight_symmetric": true,
+    "quantize_bias": false,
+    "op_types_to_quantize": "ORT default (unrestricted -- see module docstring)",
+    "calibration_provider": "CPUExecutionProvider",
+    "calibration_stride": 8
+  },
+  "known_limitations": [
+    "per_channel=False: weights are quantized per-tensor, not per-output-channel. Per-channel is the standard accuracy improvement for Conv/Gemm/MatMul weights and was not attempted in this pass -- deferred, not silently skipped.",
+    "Calibration corpus is calibration/manifest.json's 96-sample, single-source, augmentation-diverse corpus (see calibration/README.md) -- synthetic perturbations of ONE real photo, not a claim of deployment-distribution coverage."
+  ],
+  "tensorrt_parser_fixups": {
+    "rank0_qdq_pairs_stripped": 96,
+    "float32_scales_downcast_to_float16": 24,
+    "note": "See conversion/quantize_onnx.py's module docstring for exactly what each fixup is and why -- both were found by attempting a TensorRT parse and reading the exact error, not assumed."
+  },
+  "op_histogram_before_fixup": {
+    "total_nodes": 7924,
+    "QuantizeLinear": 2056,
+    "DequantizeLinear": 2452,
+    "histogram": {
+      "Add": 506,
+      "BatchNormalization": 2,
+      "Cast": 222,
+      "CastLike": 72,
+      "Concat": 194,
+      "Constant": 698,
+      "Conv": 2,
+      "ConvTranspose": 2,
+      "DequantizeLinear": 2452,
+      "Div": 24,
+      "Equal": 144,
+      "Erf": 24,
+      "Expand": 24,
+      "Identity": 1,
+      "LayerNormalization": 49,
+      "MatMul": 336,
+      "Mul": 240,
+      "QuantizeLinear": 2056,
+      "Reshape": 248,
+      "Shape": 48,
+      "Slice": 98,
+      "Softmax": 24,
+      "Sqrt": 48,
+      "Transpose": 410
+    }
+  },
+  "op_histogram_after_fixup": {
+    "total_nodes": 7685,
+    "QuantizeLinear": 1962,
+    "DequantizeLinear": 2305,
+    "histogram": {
+      "Add": 506,
+      "BatchNormalization": 2,
+      "Cast": 222,
+      "CastLike": 72,
+      "Concat": 194,
+      "Constant": 698,
+      "Conv": 2,
+      "ConvTranspose": 2,
+      "DequantizeLinear": 2305,
+      "Div": 24,
+      "Equal": 144,
+      "Erf": 24,
+      "Expand": 24,
+      "Identity": 1,
+      "LayerNormalization": 49,
+      "MatMul": 336,
+      "Mul": 240,
+      "QuantizeLinear": 1962,
+      "Relu": 2,
+      "Reshape": 248,
+      "Shape": 48,
+      "Slice": 98,
+      "Softmax": 24,
+      "Sqrt": 48,
+      "Transpose": 410
+    }
+  },
+  "quantize_wall_clock_s": 3615.1,
+  "installed_versions": {
+    "python": "3.12.3",
+    "onnx": "1.22.0",
+    "onnxruntime": "1.30.0"
+  },
+  "metadata_recovery_note": "This metadata was reconstructed after the real 96-sample, ~60-minute ORT quantize_static + fixup run completed successfully on-disk (results/onnx/vitpose_plus_l_int8_qdq.onnx[.data], verified sha256-consistent and independently confirmed to parse cleanly in TensorRT with zero errors), but conversion/quantize_onnx.py's own process then crashed on its subsequent onnx.checker.check_model(full_check=True) sanity call -- a checker/shape-inference limitation for float16 QuantizeLinear/DequantizeLinear scales on this opset, not a defect in the artifact (see that script's comment at the fixed call site). Rerunning the full calibration solely to regenerate this metadata file was not worth another hour of compute for an artifact already known-good; every field above except op_histogram_before_fixup (a structural, calibration-data-independent property, see comment above) was computed directly from the actual on-disk artifacts and manifests."
+}

@@ -33,6 +33,7 @@
   "tensor_diff": {
     "max_abs_error": 0.0009765625,
     "mean_abs_error": 6.048127488611499e-06,
+    "rmse": 4.464016456040554e-05,
     "max_rel_error": 0.046639230102300644,
     "rel_error_threshold": 0.001
   },
@@ -244,6 +245,7 @@
       }
     ],
     "mean_distance_px": 0.01954207523031862,
+    "p95_distance_px": 0.035110917171586785,
     "max_distance_px": 0.04216239500114696
   }
 }
