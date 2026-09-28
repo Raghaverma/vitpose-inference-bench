@@ -1,0 +1,160 @@
+{
+  "backend": "TensorRT",
+  "precision": "INT8 (strongly-typed network, explicit Q/DQ graph from conversion/quantize_onnx.py -- see that script and this one's module docstrings for why there is no BuilderFlag.INT8 step here)",
+  "engine_metadata": {
+    "model": "ViTPose++-L",
+    "stage": "Stage 6B -- INT8 TensorRT engine build",
+    "source": "vitpose_plus_l_int8_qdq_b8.onnx",
+    "onnx_sha256": "489b7b4f3ea8003d78531db08f3a9886ec941c26522ee765fcaba739d4c01d91",
+    "calibration_manifest_sha256": "3da8a65615a6fa9f4652887f2e704020c91b33ebe3a5422c014d628141609312",
+    "calibration_num_crops": 256,
+    "dataset_index_validated": 0,
+    "quantization_recipe": {
+      "quantized_op": "MatMul inputs only (Linear x weight and attention act x act)",
+      "kept_fp16": "LayerNorm, GELU, Softmax, residual Adds, biases, MoE mask, patch-embedding Conv, deconvolution head, heatmap output",
+      "weights": "per-output-channel symmetric INT8, absmax / 127",
+      "activations": "per-tensor symmetric INT8, p99.99 of |x| / 127 on real crops; softmax probabilities amax = 1.0",
+      "zero_point": 0
+    },
+    "scales_sha256": "15f7881b18c50c9d967461d65ff72690c1c5385c9381235e4a55f772526c5a2b",
+    "engine_path": "/home/ubuntu/TensorRT/engines/vitpose_b8_int8.engine",
+    "engine_sha256": "71627eac0a33c9f90dd126649ad3a46b16e99f2841f713ea02716fbdcc5beca0",
+    "precision_requested": "INT8 (strongly-typed network, explicit Q/DQ graph from conversion/quantize_onnx.py -- see that script and this one's module docstrings for why there is no BuilderFlag.INT8 step here)",
+    "mode": "tuned",
+    "benchmarkable": true,
+    "batch": 8,
+    "opset": {
+      "ai.onnx": 19
+    },
+    "build_wall_clock_s": 148.00431243900675,
+    "builder_optimization_level": 3,
+    "build_timestamp_utc": "2026-09-28T14:19:30.674876+00:00",
+    "vram": {
+      "engine_file_size_mb": 446.25888442993164,
+      "activation_workspace_mb": 27.75,
+      "build_phase_vram_delta_mb": 364.0,
+      "note": "same three physically distinct figures as conversion/build_engine.py's FP16 metadata -- see that script's docstring."
+    },
+    "precision_audit": {
+      "total_layers": 348,
+      "layer_precision_histogram": {
+        "Half": 203,
+        "Float+Half": 24,
+        "Int8": 120,
+        "Float": 1
+      },
+      "int8_layers": 120,
+      "fp16_layers": 203,
+      "fp32_layers": 1,
+      "mixed_precision_layers": 24,
+      "fraction_int8": 0.3448275862068966,
+      "fraction_fp16": 0.5833333333333334,
+      "fraction_fp32": 0.0028735632183908046,
+      "fraction_mixed": 0.06896551724137931,
+      "note": "The *_layers counts above classify by each layer's OUTPUT tensor Datatype(s), same technique as conversion/build_engine.py's FP16 precision_audit -- 'mixed' layers (e.g. Half+Int8) straddle a quantize/dequantize boundary. By that measure an INT8 GEMM that writes Float counts as FP32; int8_input_layers / layer_io_signature_histogram below count what actually reads INT8.",
+      "int8_input_layers": 240,
+      "layer_io_signature_histogram": {
+        "fusion: Int8 -> Half": 168,
+        "kgen: Half -> Float+Half": 24,
+        "kgen: Float -> Int8": 24,
+        "gemm: Int8 -> Int8": 24,
+        "kgen: Int8 -> Int8": 24,
+        "fusion: Half+Int8 -> Half": 24,
+        "kgen: Half -> Int8": 24,
+        "fusion: Int8 -> Int8": 24,
+        "Reformat: Half -> Half": 4,
+        "CaskConvolution: Half -> Half": 2,
+        "CaskDeconvolutionV2: Half -> Half": 2,
+        "kgen: Half -> Half": 1,
+        "kgen: Int64 -> Half": 1,
+        "kgen: Half -> Float": 1,
+        "kgen: Float -> Half": 1
+      }
+    },
+    "env": {
+      "python": "3.12.3",
+      "tensorrt_version": "11.3.0.99",
+      "torch": "2.14.0+cu130",
+      "cuda_runtime": "13.0",
+      "gpu_name": "NVIDIA L4",
+      "gpu_driver_version": "595.84",
+      "compute_capability": "8.9"
+    }
+  },
+  "benchmark": {
+    "num_iters": 100,
+    "batch_size": 8,
+    "mean_ms": 15.68763307062909,
+    "std_ms": 0.2074841729038013,
+    "p50_ms": 15.611615526722744,
+    "p95_ms": 16.172576986718923,
+    "p99_ms": 16.192907991353422,
+    "min_ms": 15.482252987567335,
+    "max_ms": 16.19667699560523,
+    "fps": 509.95583361634505,
+    "device_vram_mb": 2581.125,
+    "vram_measurement_method": "cuda.mem_get_info snapshot after warmup, not a true peak"
+  },
+  "real_crop_correctness": {
+    "num_crops": 400,
+    "num_joints_scored": 6691,
+    "visible_score": 0.3,
+    "tensor_diff": {
+      "rmse": 0.004707539454102516,
+      "max_abs_error": 0.5443115234375
+    },
+    "keypoint_err_crop_px": {
+      "mean": 0.5209899544715881,
+      "median": 0.3134765625,
+      "p95": 1.2670516967773438,
+      "max": 141.66650390625,
+      "pct_over_2px": 1.9429083843969512,
+      "pct_over_5px": 0.2989089822149156
+    },
+    "per_joint_median_err_crop_px": {
+      "nose": 0.25047731399536133,
+      "left_eye": 0.24709615111351013,
+      "right_eye": 0.23292915523052216,
+      "left_ear": 0.25335320830345154,
+      "right_ear": 0.24559497833251953,
+      "left_shoulder": 0.2623419165611267,
+      "right_shoulder": 0.2652703523635864,
+      "left_elbow": 0.23235580325126648,
+      "right_elbow": 0.36256134510040283,
+      "left_wrist": 0.30872446298599243,
+      "right_wrist": 0.3249189853668213,
+      "left_hip": 0.6197423934936523,
+      "right_hip": 0.647645115852356,
+      "left_knee": 0.35930824279785156,
+      "right_knee": 0.3580760955810547,
+      "left_ankle": 0.3885999917984009,
+      "right_ankle": 0.3893415927886963
+    },
+    "score_abs_diff_mean": 0.028530938550829887
+  },
+  "timing_input": "first 8 crops of calibration/real_corpus.py's eval split, dataset_index 0 (the INT8 engine's validated expert)",
+  "paired_fp16": {
+    "rounds": 5,
+    "iters_per_round": 100,
+    "int8_round_means_ms": [
+      15.686988109955564,
+      15.92689459270332,
+      15.972302642767318,
+      16.02064097765833,
+      16.06074564915616
+    ],
+    "fp16_round_means_ms": [
+      27.157608139095828,
+      27.301632919698022,
+      27.46525871043559,
+      27.590959798544645,
+      27.723891354398802
+    ],
+    "int8_median_ms": 15.972302642767318,
+    "fp16_median_ms": 27.46525871043559,
+    "int8_fps": 500.86704333909,
+    "fp16_fps": 291.2770669427684,
+    "speedup_vs_fp16": 1.7195553656048828,
+    "fp16_engine_sha256": "efcb307e21aec36398ad565e686b569ddee238155736baf6e4079498ce351589"
+  }
+}

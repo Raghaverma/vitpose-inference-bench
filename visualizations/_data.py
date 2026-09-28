@@ -157,8 +157,8 @@ def load_stage2() -> dict:
 def load_stage3_fp16() -> dict | None:
     """Stage 3 TensorRT FP16. Returns None (not an error) if not yet built --
     unlike Stage 0-2, this artifact is genuinely optional right now: TensorRT
-    INT8 and the batch matrix don't exist yet, and figures need to keep
-    working (with TensorRT drawn as unmeasured) before this stage lands."""
+    the figures need to keep working (with TensorRT drawn as unmeasured)
+    before this stage lands."""
     path = REPO_ROOT / "results" / "tensorrt" / "fp16.json"
     if not path.is_file():
         return None
@@ -180,6 +180,21 @@ def load_stage3_fp16() -> dict | None:
     return data
 
 
+def load_stage6_int8() -> dict | None:
+    """Stage 6 TensorRT INT8 (batch 1). None if not built -- the architecture figure then draws
+    INT8 as unmeasured. Refuses a benchmark file whose real-crop correctness gate is missing:
+    an INT8 latency without its accuracy check is exactly what the first INT8 attempt had."""
+    path = REPO_ROOT / "results" / "tensorrt" / "int8.json"
+    if not path.is_file():
+        return None
+    data = json.loads(path.read_text())
+    if not data.get("real_crop_correctness"):
+        raise ValueError(f"{path} has no real_crop_correctness block -- re-run "
+                         f"python -m backends.tensorrt --precision int8")
+    assert_positive(data["benchmark"]["mean_ms"], "stage6_int8.benchmark.mean_ms")
+    return data
+
+
 def load_batch_matrix() -> dict:
     """Stage 4's 3-backend x 5-batch-size comparison. Produced by
     aggregate_batch_matrix.py from files backends/pytorch.py,
@@ -191,7 +206,7 @@ def load_batch_matrix() -> dict:
                           "    (after running backends/pytorch.py, backends/onnxruntime.py, and "
                           "backends/tensorrt.py --batch-size B for B in 1,2,4,8,16)")
     for cell in data["cells"]:
-        for backend in ("pytorch", "onnxruntime", "tensorrt"):
+        for backend in ("pytorch", "onnxruntime", "tensorrt", "tensorrt_int8"):
             stats = cell.get(backend)
             if stats is not None:
                 assert_positive(stats["mean_ms"], f"batch_matrix[batch={cell['batch']}].{backend}.mean_ms")

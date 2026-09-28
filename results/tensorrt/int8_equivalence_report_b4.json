@@ -1,0 +1,43 @@
+{
+  "candidate": "TensorRT INT8 (batch=4) vs PyTorch FP16",
+  "batch": 4,
+  "eval_manifest_sha256": "3da8a65615a6fa9f4652887f2e704020c91b33ebe3a5422c014d628141609312",
+  "real_crops": {
+    "num_crops": 400,
+    "num_joints_scored": 6691,
+    "visible_score": 0.3,
+    "tensor_diff": {
+      "rmse": 0.004707486368715763,
+      "max_abs_error": 0.54437255859375
+    },
+    "keypoint_err_crop_px": {
+      "mean": 0.5209799408912659,
+      "median": 0.31354549527168274,
+      "p95": 1.2664973735809326,
+      "max": 141.68576049804688,
+      "pct_over_2px": 1.957853833507697,
+      "pct_over_5px": 0.2989089822149156
+    },
+    "per_joint_median_err_crop_px": {
+      "nose": 0.25350168347358704,
+      "left_eye": 0.2452700287103653,
+      "right_eye": 0.23205584287643433,
+      "left_ear": 0.2540477514266968,
+      "right_ear": 0.24483826756477356,
+      "left_shoulder": 0.25975459814071655,
+      "right_shoulder": 0.26603952050209045,
+      "left_elbow": 0.2341066598892212,
+      "right_elbow": 0.36227965354919434,
+      "left_wrist": 0.30746719241142273,
+      "right_wrist": 0.3247634172439575,
+      "left_hip": 0.6218833327293396,
+      "right_hip": 0.6482841372489929,
+      "left_knee": 0.358720064163208,
+      "right_knee": 0.35928648710250854,
+      "left_ankle": 0.39103466272354126,
+      "right_ankle": 0.3886111378669739
+    },
+    "score_abs_diff_mean": 0.028530173003673553
+  },
+  "gate_failures": []
+}

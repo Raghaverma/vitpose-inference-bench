@@ -1,0 +1,93 @@
+{
+  "purpose": "Stage 6 INT8 calibration (calib) and held-out accuracy evaluation (eval) on real cricket net footage -- see calibration/real_corpus.py",
+  "content_source": "real_cricket_net_footage",
+  "content_source_note": "Person crops from AutoClipping production jobs: the production person detector's boxes, warped with AutoClipping's deployed crop warp (pose_codec, antialiased, from the source frame) by its distill/build_dataset.py. Private footage: arrays are gitignored.",
+  "dataset_index": 0,
+  "dataset_index_note": "COCO expert only -- the expert production runs. INT8 scales and accuracy are validated for expert 0 and nothing else.",
+  "resolution": [
+    256,
+    192
+  ],
+  "split_rule": "by video: AutoClipping distill.data.video_split (sha1(path) < 0.1 -> val), plus a content-fingerprint disjointness check",
+  "sampling": "numpy default_rng(0): 256 crops without replacement from train rows, then 400 from val rows, each kept in manifest order",
+  "videos": {
+    "20260909T113336Z-7bbc4cee": {
+      "split": "train",
+      "fingerprint": "dcde2d2268a7f974-134438951",
+      "crops_in_source_dataset": 36
+    },
+    "20260909T115853Z-027e1ed2": {
+      "split": "train",
+      "fingerprint": "409a38d8f0341290-52329940",
+      "crops_in_source_dataset": 415
+    },
+    "20260909T115853Z-1206c3f5": {
+      "split": "val",
+      "fingerprint": "9e78ac4f1926b4f9-20811455",
+      "crops_in_source_dataset": 108
+    },
+    "20260909T120356Z-bfa3fa97": {
+      "split": "train",
+      "fingerprint": "97d0fdc2816771ec-73475320",
+      "crops_in_source_dataset": 485
+    },
+    "20260909T120859Z-61d57625": {
+      "split": "val",
+      "fingerprint": "af1261444dee6523-15526171",
+      "crops_in_source_dataset": 94
+    },
+    "20260909T121401Z-8d288252": {
+      "split": "train",
+      "fingerprint": "939e824077d9803f-74433528",
+      "crops_in_source_dataset": 148
+    },
+    "20260909T122915Z-0b36ab09": {
+      "split": "val",
+      "fingerprint": "3d85f2d9d31f42ca-249653841",
+      "crops_in_source_dataset": 348
+    },
+    "20260909T124925Z-88cd3410": {
+      "split": "train",
+      "fingerprint": "f8f0db208f6b4683-343117737",
+      "crops_in_source_dataset": 225
+    },
+    "20260909T125427Z-7d56eb29": {
+      "split": "train",
+      "fingerprint": "c37a4b90c637790e-289593477",
+      "crops_in_source_dataset": 366
+    },
+    "20260909T125929Z-298225c8": {
+      "split": "train",
+      "fingerprint": "31555e88c1ec4b1c-110491593",
+      "crops_in_source_dataset": 283
+    }
+  },
+  "splits": {
+    "calib": {
+      "path": "calibration/real/calib.npz",
+      "sha256": "ae432791484baf2836871e3b6fcfa93a44abe47a2a162e7927dd647bb665a562",
+      "num_crops": 256,
+      "per_job_counts": {
+        "20260909T113336Z-7bbc4cee": 6,
+        "20260909T115853Z-027e1ed2": 58,
+        "20260909T120356Z-bfa3fa97": 61,
+        "20260909T121401Z-8d288252": 26,
+        "20260909T124925Z-88cd3410": 26,
+        "20260909T125427Z-7d56eb29": 38,
+        "20260909T125929Z-298225c8": 41
+      }
+    },
+    "eval": {
+      "path": "calibration/real/eval.npz",
+      "sha256": "30309c822735acbae726469639d6eee3ca9fca15ef6089b2f707a992b66b62ff",
+      "num_crops": 400,
+      "per_job_counts": {
+        "20260909T115853Z-1206c3f5": 84,
+        "20260909T120859Z-61d57625": 66,
+        "20260909T122915Z-0b36ab09": 250
+      }
+    }
+  },
+  "eval_reference": "ref_heatmaps in eval.npz: PyTorch FP16 ViTPose++-L (baseline.load_pose_model, cuDNN deterministic), dataset_index 0, batches of 16",
+  "built_utc": "2026-09-28T13:49:38.849204+00:00"
+}

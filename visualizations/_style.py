@@ -35,7 +35,8 @@ BLUE = "#2a78d6"       # PyTorch FP16 -- always
 ORANGE = "#eb6834"     # ONNX Runtime, faithful graph -- always
 AQUA = "#1baf7a"       # ONNX Runtime, ORT graph optimizations -- always
 YELLOW = "#eda100"     # TensorRT FP16 -- always
-UNMEASURED_GREY = "#c3c2b7"  # TensorRT INT8 / anything not yet measured -- dashed, no fill
+MAGENTA = "#b3368f"    # TensorRT INT8 -- always (Stage 6)
+UNMEASURED_GREY = "#c3c2b7"  # anything not yet measured -- dashed, no fill
 
 BACKEND_ORDER = ["pytorch", "onnx_faithful", "onnx_optimized", "tensorrt_fp16"]
 BACKEND_COLORS = {

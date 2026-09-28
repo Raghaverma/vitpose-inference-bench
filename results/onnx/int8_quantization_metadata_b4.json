@@ -1,11 +1,11 @@
 {
   "model": "ViTPose++-L",
   "stage": "Stage 6 Gate B -- INT8 Q/DQ insertion (MatMul inputs only)",
-  "batch": 1,
-  "source_onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l.onnx",
-  "source_onnx_sha256": "097a1f4c9d63523764c65f91f67bf210eba582a0c119e2e861bf6bd9d6f328af",
-  "output_onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l_int8_qdq.onnx",
-  "output_onnx_sha256": "193c2bd2bd7815fdf39ce87a3c59b5e08d73a4d0d35f550a4f0deee3b0176cb4",
+  "batch": 4,
+  "source_onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l_b4.onnx",
+  "source_onnx_sha256": "687ab371458f73cc7253000a2e470c362aaa596db264f3f789e53450f81c102c",
+  "output_onnx_path": "/home/ubuntu/TensorRT/results/onnx/vitpose_plus_l_int8_qdq_b4.onnx",
+  "output_onnx_sha256": "a589906bc3ccbebd93014a41e6f3549b417818f55a0038084815714c5a643286",
   "opset": {
     "ai.onnx": 19
   },
@@ -30,7 +30,7 @@
   },
   "scales_path": "results/onnx/int8_calibration_scales.json",
   "scales_sha256": "15f7881b18c50c9d967461d65ff72690c1c5385c9381235e4a55f772526c5a2b",
-  "scales_source": "calibrated",
+  "scales_source": "cache",
   "calibration_manifest_sha256": "3da8a65615a6fa9f4652887f2e704020c91b33ebe3a5422c014d628141609312",
   "calibration_num_crops": 256,
   "dataset_index_validated": 0,

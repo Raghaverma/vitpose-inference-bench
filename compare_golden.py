@@ -122,6 +122,90 @@ def compare_outputs(golden: np.ndarray, candidate: np.ndarray, processor, box_xy
     }
 
 
+# transformers 5.17's post_dark_unbiased_data_processing builds its flat heatmap index from
+# float32 keypoint coordinates and only then casts it to int. Past 2**24 elements -- N crops x
+# 17 joints x 66 x 50 padded cells, i.e. N >= 300 boxes in one call -- the index rounds and DARK
+# reads the wrong neighbours: on the real eval set every crop from index 299 on moved ~4 px
+# when all 400 were decoded at once. Decoding in chunks far below that is exact.
+HF_DECODE_CHUNK = 128
+
+# Stage 6 INT8 gates on the held-out real crops (calibration/real_corpus.py). Keypoint errors
+# are in model-input pixels -- source-px distance / crop height * 256 -- so large and small
+# crops weigh alike, and only over joints the FP16 reference itself scores above
+# INT8_VISIBLE_SCORE (a joint the reference can't see has no position to preserve). First
+# measured, recipe as shipped (ONNX Runtime, batch 1): median 0.32 px, p95 1.31 px, 0.31% of
+# joints over 5 px, heatmap RMSE 0.0048. The replaced all-tensors recipe measured 5.7 px /
+# 48 px / 57% / 0.044, so every gate below separates the two by an order of magnitude while
+# leaving ~2x headroom over normal engine-to-engine and batch-size variation.
+INT8_VISIBLE_SCORE = 0.3
+INT8_MEDIAN_ERR_THRESHOLD_PX = 0.6
+INT8_P95_ERR_THRESHOLD_PX = 2.5
+INT8_PCT_OVER_5PX_THRESHOLD = 1.0
+INT8_HEATMAP_RMSE_THRESHOLD = 0.01
+
+
+def decode_crop_batch(processor, heatmaps: np.ndarray, boxes_xywh: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """(N, 17, 64, 48) heatmaps + one box per crop -> keypoints (N, 17, 2) in source px and
+    scores (N, 17), through HF's own post-processing, HF_DECODE_CHUNK crops per call."""
+    xy, scores = [], []
+    for k in range(0, len(heatmaps), HF_DECODE_CHUNK):
+        hm = torch.from_numpy(np.ascontiguousarray(heatmaps[k:k + HF_DECODE_CHUNK])).float()
+        boxes = [[b.tolist()] for b in boxes_xywh[k:k + HF_DECODE_CHUNK]]
+        poses = processor.post_process_pose_estimation(SimpleNamespace(heatmaps=hm), boxes=boxes)
+        xy.append(np.stack([p[0]["keypoints"].cpu().numpy() for p in poses]))
+        scores.append(np.stack([p[0]["scores"].cpu().numpy().reshape(-1) for p in poses]))
+    return np.concatenate(xy), np.concatenate(scores)
+
+
+def compare_crop_batch(reference: np.ndarray, candidate: np.ndarray, processor, boxes_xywh: np.ndarray,
+                       crop_height_px: np.ndarray, visible_score: float = INT8_VISIBLE_SCORE) -> dict:
+    """Many-crop counterpart of compare_outputs(): tensor-level and keypoint-level drift of a
+    candidate backend against per-crop reference heatmaps, both decoded the same way."""
+    if reference.shape != candidate.shape:
+        raise ValueError(f"shape mismatch: reference {reference.shape} vs candidate {candidate.shape}")
+    ref32, cand32 = reference.astype(np.float32), candidate.astype(np.float32)
+    ref_xy, ref_scores = decode_crop_batch(processor, reference, boxes_xywh)
+    cand_xy, cand_scores = decode_crop_batch(processor, candidate, boxes_xywh)
+    err = np.linalg.norm(cand_xy - ref_xy, axis=-1) / crop_height_px.reshape(-1, 1) * 256.0
+    visible = ref_scores > visible_score
+    e = err[visible]
+    per_joint = {name: float(np.median(err[:, j][visible[:, j]])) if visible[:, j].any() else None
+                 for j, name in enumerate(COCO_KEYPOINT_NAMES)}
+    return {
+        "num_crops": int(len(reference)),
+        "num_joints_scored": int(visible.sum()),
+        "visible_score": visible_score,
+        "tensor_diff": {
+            "rmse": float(np.sqrt(np.mean((cand32 - ref32) ** 2))),
+            "max_abs_error": float(np.abs(cand32 - ref32).max()),
+        },
+        "keypoint_err_crop_px": {
+            "mean": float(e.mean()),
+            "median": float(np.median(e)),
+            "p95": float(np.percentile(e, 95)),
+            "max": float(e.max()),
+            "pct_over_2px": float((e > 2).mean() * 100),
+            "pct_over_5px": float((e > 5).mean() * 100),
+        },
+        "per_joint_median_err_crop_px": per_joint,
+        "score_abs_diff_mean": float(np.abs(cand_scores - ref_scores).mean()),
+    }
+
+
+def int8_gate_failures(report: dict) -> list[str]:
+    """The four Stage 6 INT8 gates, as human-readable failures (empty = pass)."""
+    kp, t = report["keypoint_err_crop_px"], report["tensor_diff"]
+    checks = [
+        (t["rmse"] < INT8_HEATMAP_RMSE_THRESHOLD, f"heatmap RMSE {t['rmse']:.5f} >= {INT8_HEATMAP_RMSE_THRESHOLD}"),
+        (kp["median"] < INT8_MEDIAN_ERR_THRESHOLD_PX,
+         f"median keypoint error {kp['median']:.3f} px >= {INT8_MEDIAN_ERR_THRESHOLD_PX} px"),
+        (kp["p95"] < INT8_P95_ERR_THRESHOLD_PX, f"p95 keypoint error {kp['p95']:.3f} px >= {INT8_P95_ERR_THRESHOLD_PX} px"),
+        (kp["pct_over_5px"] < INT8_PCT_OVER_5PX_THRESHOLD,
+         f"{kp['pct_over_5px']:.2f}% of joints moved > 5 px (limit {INT8_PCT_OVER_5PX_THRESHOLD}%)"),
+    ]
+    return [msg for ok, msg in checks if not ok]
+
+
 def main() -> None:
     args = parse_args()
     golden_env = json.loads((args.golden_dir / "env.json").read_text())

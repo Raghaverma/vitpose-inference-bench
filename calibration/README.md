@@ -1,5 +1,19 @@
 # Stage 6, Gate A — TensorRT INT8 calibration corpus
 
+> **Superseded for INT8 by the real-footage corpus.** The INT8 engine is
+> now calibrated and evaluated on real cricket net footage —
+> `calibration/real_corpus.py`, manifest `calibration/real_manifest.json`:
+> 256 calibration crops from 7 videos, 400 held-out evaluation crops from 3
+> other videos, split by video with a content-fingerprint check. The crops
+> are private footage, so `calibration/real/*.npz` is gitignored under the
+> [private-footage policy](#private-footage-policy-for-when-real-data-replaces-this-placeholder)
+> below, and only the manifest is committed. The synthetic corpus described in
+> the rest of this file is no longer used by any INT8 step. It stays here
+> because it is the record of why the first INT8 attempt failed silently:
+> that engine was calibrated on these 96 perturbations of one photo and
+> checked only against the golden crop, which comes from the same photo.
+> See the README's Stage 6 section.
+
 **Label this corpus explicitly wherever it's referenced downstream:
 "Engineering calibration corpus — single-source, augmentation-diverse."**
 Not "representative of the deployment distribution" — it isn't, and no
@@ -9,8 +23,7 @@ calibration *machinery* (per-expert coverage, entropy-histogram collection,
 the TensorRT build path) against real activation statistics, not to make a
 claim about production pose/lighting/scene diversity. See
 [Source data](#source-data-synthetic-augmentation-of-one-real-crop-not-a-dataset)
-below for exactly what that means -- this corpus is a placeholder pending a
-held-out, multi-source pose-quality evaluation set (not yet built).
+below for exactly what that means.
 
 ## What Gate A is, and isn't
 
@@ -240,8 +253,6 @@ checks, both must be read together:
   coverage-assertion and `compare_golden.py`-based keypoint-shift check
   before being trusted, the same discipline this corpus already applies to
   its two existing families.
-- **Swapping the content source from synthetic-only to real footage** —
-  public pose-dataset crops and/or the user's own private sports footage,
-  per the private-footage policy above. This is the change that would
-  actually close the "one photo, synthetically perturbed" gap flagged
-  throughout this document.
+- ~~**Swapping the content source from synthetic-only to real footage**~~ —
+  done for INT8 as a separate corpus (`calibration/real_corpus.py`, see the
+  note at the top of this file), rather than by rewriting this one.

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""TensorRT FP16 backend for the exported ViTPose++-L engine.
+"""TensorRT FP16 / INT8 backend for the exported ViTPose++-L engines.
 
-    python -m backends.tensorrt
+    python -m backends.tensorrt [--batch-size B]
+    python -m backends.tensorrt --precision int8 [--batch-size B]
 
 Gate D equivalent for TensorRT: benchmark the built engine against the
 frozen PyTorch baseline, using the same sync-bracketed wall-clock timing
@@ -35,6 +36,17 @@ attention reshape math mixing information between slots) that a
 repeated-copy batch is structurally blind to. A batch size whose engine
 doesn't even bind to that batch dimension, or whose output shape doesn't
 match, fails loudly here rather than silently benchmarking something else.
+
+Stage 6 update: `--precision int8` benchmarks conversion/build_int8_engine.py's
+engine (results/tensorrt/int8_engine_metadata[_b{B}].json -> int8[_b{B}].json).
+INT8 cannot meet the per-slot FP16 max_abs_error bound, so its gate is
+verify_int8_real_crops(): all 400 held-out real crops through the engine in
+batches of B, each slot against that crop's own PyTorch FP16 reference, with
+the same four gates as tests/test_tensorrt_int8_equivalence.py. Only
+dataset_index 0 is validated, so the timed input is real crops at expert 0.
+The speedup that matters is against FP16 at the same batch size, and it is
+measured in-process (time_paired_vs_fp16: alternating rounds), not by
+dividing into a fp16*.json timed on another day.
 """
 from __future__ import annotations
 
@@ -118,6 +130,11 @@ def run_inference(engine, context, inputs: dict[str, torch.Tensor], stream: int)
     input_names, output_names = io_tensor_names(engine)
     outputs = {}
     for name in input_names:
+        # TensorRT reads the raw buffer as dense row-major: a strided tensor (e.g. from a
+        # transposed numpy array) would be silently misread, not rejected.
+        if not inputs[name].is_contiguous():
+            raise ValueError(f"[tensorrt backend] input {name!r} is not contiguous "
+                             f"(strides {inputs[name].stride()}) -- call .contiguous() first.")
         context.set_tensor_address(name, inputs[name].data_ptr())
     for name in output_names:
         shape = tuple(context.get_tensor_shape(name))
@@ -169,8 +186,14 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--batch-size", type=int, default=1)
+    p.add_argument("--precision", choices=["fp16", "int8"], default="fp16",
+                    help="int8 = Stage 6's engine (conversion/build_int8_engine.py): gated on the real "
+                         "eval crops instead of the FP16 per-slot golden check, and timed against the "
+                         "same-batch FP16 engine interleaved in this process.")
+    p.add_argument("--paired-rounds", type=int, default=5,
+                    help="int8 only: alternating INT8/FP16 timing rounds for the paired speedup.")
     p.add_argument("--engine-metadata", type=Path, default=None,
-                    help="Defaults to results/tensorrt/engine_metadata[_b{B}].json.")
+                    help="Defaults to results/tensorrt/{engine,int8_engine}_metadata[_b{B}].json.")
     p.add_argument("--golden-dir", type=Path, default=REPO_ROOT / "golden")
     p.add_argument("--num-iters", type=int, default=100)
     p.add_argument("--warmup", type=int, default=20)
@@ -183,11 +206,77 @@ def parse_args() -> argparse.Namespace:
     args = p.parse_args()
 
     suffix = "" if args.batch_size == 1 else f"_b{args.batch_size}"
+    prefix = "int8_engine" if args.precision == "int8" else "engine"
     if args.engine_metadata is None:
-        args.engine_metadata = REPO_ROOT / "results" / "tensorrt" / f"engine_metadata{suffix}.json"
+        args.engine_metadata = REPO_ROOT / "results" / "tensorrt" / f"{prefix}_metadata{suffix}.json"
     if args.output is None:
-        args.output = REPO_ROOT / "results" / "tensorrt" / f"fp16{suffix}.json"
+        args.output = REPO_ROOT / "results" / "tensorrt" / f"{args.precision}{suffix}.json"
     return args
+
+
+def time_paired_vs_fp16(int8_call_fn, batch: int, inputs: dict, stream: torch.cuda.Stream,
+                        args: argparse.Namespace) -> dict | None:
+    """Time the INT8 engine and the same-batch FP16 engine in alternating rounds within one
+    process, on the same inputs. The L4 here is power-capped (72 W), so its clocks drift by a
+    few percent over minutes; a speedup computed against results/tensorrt/fp16*.json from
+    another day would fold that drift into the ratio."""
+    sfx = "" if batch == 1 else f"_b{batch}"
+    fp16_meta = REPO_ROOT / "results" / "tensorrt" / f"engine_metadata{sfx}.json"
+    if not fp16_meta.is_file():
+        print(f"[tensorrt backend] no FP16 batch={batch} engine manifest -- skipping the paired comparison.")
+        return None
+    fp16_manifest = verify_manifest(fp16_meta)
+    fp16_engine = load_engine(Path(fp16_manifest["engine_path"]))
+    fp16_context = fp16_engine.create_execution_context()
+
+    def fp16_call_fn():
+        with torch.cuda.stream(stream):
+            run_inference(fp16_engine, fp16_context, inputs, stream.cuda_stream)
+
+    rounds = {"int8": [], "fp16": []}
+    for _ in range(args.paired_rounds):
+        for name, fn in (("int8", int8_call_fn), ("fp16", fp16_call_fn)):
+            st = time_calls(fn, batch_size=batch, device="cuda", num_iters=args.num_iters, warmup=args.warmup)
+            rounds[name].append(st["mean_ms"])
+    med = {k: float(np.median(v)) for k, v in rounds.items()}
+    speedup = med["fp16"] / med["int8"]
+    print(f"[tensorrt backend] paired ({args.paired_rounds} alternating rounds): INT8 {med['int8']:.2f}ms  "
+          f"FP16 {med['fp16']:.2f}ms  -> {speedup:.2f}x")
+    return {"rounds": args.paired_rounds, "iters_per_round": args.num_iters,
+            "int8_round_means_ms": rounds["int8"], "fp16_round_means_ms": rounds["fp16"],
+            "int8_median_ms": med["int8"], "fp16_median_ms": med["fp16"],
+            "int8_fps": batch * 1000.0 / med["int8"], "fp16_fps": batch * 1000.0 / med["fp16"],
+            "speedup_vs_fp16": speedup, "fp16_engine_sha256": fp16_manifest["engine_sha256"]}
+
+
+def verify_int8_real_crops(engine, context, stream: torch.cuda.Stream, batch: int) -> dict:
+    """INT8's counterpart of verify_batch_correctness(): an INT8 engine can't meet the FP16
+    per-slot max_abs_error bound by design, so it is gated instead on the held-out real crops
+    (calibration/real_corpus.py) with the same four gates as
+    tests/test_tensorrt_int8_equivalence.py -- all 400 crops in batches of `batch`, each slot
+    compared against that crop's own standalone PyTorch FP16 reference."""
+    from baseline import load_pose_model, resolve_checkpoint
+    from calibration.real_corpus import RealCropSet
+    from compare_golden import compare_crop_batch, int8_gate_failures
+
+    eval_set = RealCropSet("eval")
+    di = torch.zeros((batch,), dtype=torch.int64, device="cuda")
+    outs = []
+    for k in range(0, len(eval_set), batch):
+        x = torch.from_numpy(eval_set.pixel_values[k:k + batch]).cuda()
+        with torch.cuda.stream(stream):
+            y = run_inference(engine, context, {"pixel_values": x, "dataset_index": di}, stream.cuda_stream)
+        outs.append(y["heatmaps"].float().cpu().numpy())
+    processor, _ = load_pose_model(resolve_checkpoint(None), "cpu", torch.float16)
+    report = compare_crop_batch(eval_set.ref_heatmaps, np.concatenate(outs), processor,
+                                eval_set.boxes_xywh, eval_set.scale_px[:, 1])
+    failures = int8_gate_failures(report)
+    if failures:
+        raise SystemExit(f"[tensorrt backend] REFUSING to benchmark INT8 batch={batch}: " + "; ".join(failures))
+    kp = report["keypoint_err_crop_px"]
+    print(f"[tensorrt backend] INT8 batch={batch} real-crop gate OK: {report['num_crops']} crops, "
+          f"median {kp['median']:.3f} px, p95 {kp['p95']:.3f} px, >5px {kp['pct_over_5px']:.2f}%")
+    return report
 
 
 def main() -> None:
@@ -205,7 +294,13 @@ def main() -> None:
     trt_stream = torch.cuda.Stream()
 
     B = args.batch_size
-    if B == 1:
+    int8_correctness = None
+    if args.precision == "int8":
+        int8_correctness = verify_int8_real_crops(engine, context, trt_stream, B)
+        from calibration.real_corpus import RealCropSet
+        pixel_values = torch.from_numpy(RealCropSet("eval").pixel_values[:B]).cuda()
+        dataset_index = torch.zeros((B,), dtype=torch.int64, device="cuda")
+    elif B == 1:
         person_crop = np.load(args.golden_dir / "person_crop.npy").astype(np.float16)
         pixel_values = torch.from_numpy(person_crop).cuda()
         dataset_index = torch.zeros((1,), dtype=torch.int64, device="cuda")
@@ -219,7 +314,8 @@ def main() -> None:
         golden_slots = np.load(args.golden_dir / "distinct_pytorch_fp16_outputs.npy")[:B]
     inputs = {"pixel_values": pixel_values, "dataset_index": dataset_index}
 
-    verify_batch_correctness(engine, context, trt_stream, pixel_values, dataset_index, golden_slots)
+    if args.precision == "fp16":
+        verify_batch_correctness(engine, context, trt_stream, pixel_values, dataset_index, golden_slots)
 
     def call_fn():
         with torch.cuda.stream(trt_stream):
@@ -238,6 +334,11 @@ def main() -> None:
 
     report = {"backend": "TensorRT", "precision": manifest["precision_requested"],
                "engine_metadata": manifest, "benchmark": stats}
+    if args.precision == "int8":
+        report["real_crop_correctness"] = int8_correctness
+        report["timing_input"] = (f"first {B} crops of calibration/real_corpus.py's eval split, "
+                                  f"dataset_index 0 (the INT8 engine's validated expert)")
+        report["paired_fp16"] = time_paired_vs_fp16(call_fn, B, inputs, trt_stream, args)
 
     # Only compare against baselines measured at the SAME batch size -- Stage
     # 0's PyTorch baseline and Stage 2's ORT benchmark are both batch=1 only.

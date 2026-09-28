@@ -12,3 +12,6 @@ __pycache__/
 .venv/
 *.egg-info/
 .ipynb_checkpoints/
+
+# Stage 6 real-footage corpus: private footage, only calibration/real_manifest.json is committed
+calibration/real/

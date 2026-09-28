@@ -1,0 +1,294 @@
+{
+  "candidate": "TensorRT INT8 (batch=1) vs PyTorch FP16",
+  "batch": 1,
+  "eval_manifest_sha256": "3da8a65615a6fa9f4652887f2e704020c91b33ebe3a5422c014d628141609312",
+  "real_crops": {
+    "num_crops": 400,
+    "num_joints_scored": 6691,
+    "visible_score": 0.3,
+    "tensor_diff": {
+      "rmse": 0.004705267492681742,
+      "max_abs_error": 0.5223388671875
+    },
+    "keypoint_err_crop_px": {
+      "mean": 0.5104604363441467,
+      "median": 0.31420329213142395,
+      "p95": 1.2817275524139404,
+      "max": 141.43316650390625,
+      "pct_over_2px": 1.8532356897324762,
+      "pct_over_5px": 0.2540726348826782
+    },
+    "per_joint_median_err_crop_px": {
+      "nose": 0.2592717409133911,
+      "left_eye": 0.24657337367534637,
+      "right_eye": 0.22851943969726562,
+      "left_ear": 0.26367342472076416,
+      "right_ear": 0.24582603573799133,
+      "left_shoulder": 0.2560473382472992,
+      "right_shoulder": 0.26114243268966675,
+      "left_elbow": 0.23843632638454437,
+      "right_elbow": 0.3601416349411011,
+      "left_wrist": 0.29543495178222656,
+      "right_wrist": 0.30870935320854187,
+      "left_hip": 0.625618577003479,
+      "right_hip": 0.6674583554267883,
+      "left_knee": 0.36202430725097656,
+      "right_knee": 0.3600675165653229,
+      "left_ankle": 0.3946009874343872,
+      "right_ankle": 0.3806120753288269
+    },
+    "score_abs_diff_mean": 0.028494274243712425
+  },
+  "golden_crop": {
+    "candidate": "TensorRT INT8 (batch=1)",
+    "golden_env": {
+      "python": "3.12.3",
+      "torch": "2.14.0+cu130",
+      "torch_cuda": "13.0",
+      "cudnn": 92400,
+      "transformers": "5.17.0",
+      "ultralytics": "8.4.155",
+      "gpu_name": "NVIDIA L4",
+      "nvidia_driver": "595.84",
+      "golden_runs_verified_bit_identical": 5,
+      "input_shape": [
+        1,
+        3,
+        256,
+        192
+      ],
+      "output_shape": [
+        1,
+        17,
+        64,
+        48
+      ],
+      "output_dtype": "torch.float16",
+      "box_xywh": [
+        430.82086181640625,
+        164.86526489257812,
+        395.2178955078125,
+        140.6436767578125
+      ]
+    },
+    "tensor_diff": {
+      "max_abs_error": 0.2406005859375,
+      "mean_abs_error": 0.0013235255610197783,
+      "rmse": 0.009065336547791958,
+      "max_rel_error": 3.315626621246338,
+      "rel_error_threshold": 0.001
+    },
+    "keypoint_diff": {
+      "per_joint": [
+        {
+          "joint": "nose",
+          "golden_xy": [
+            475.46197509765625,
+            286.8873596191406
+          ],
+          "candidate_xy": [
+            476.7186279296875,
+            288.0078430175781
+          ],
+          "euclidean_distance_px": 1.6836446734469273
+        },
+        {
+          "joint": "left_eye",
+          "golden_xy": [
+            469.3294677734375,
+            284.2487487792969
+          ],
+          "candidate_xy": [
+            470.4864501953125,
+            284.7997131347656
+          ],
+          "euclidean_distance_px": 1.2814718278311215
+        },
+        {
+          "joint": "right_eye",
+          "golden_xy": [
+            468.90899658203125,
+            284.4408264160156
+          ],
+          "candidate_xy": [
+            469.79791259765625,
+            284.5785217285156
+          ],
+          "euclidean_distance_px": 0.8995174717141952
+        },
+        {
+          "joint": "left_ear",
+          "golden_xy": [
+            471.48760986328125,
+            270.8644104003906
+          ],
+          "candidate_xy": [
+            472.27520751953125,
+            271.7858581542969
+          ],
+          "euclidean_distance_px": 1.2121782176352478
+        },
+        {
+          "joint": "right_ear",
+          "golden_xy": [
+            469.81549072265625,
+            251.68045043945312
+          ],
+          "candidate_xy": [
+            469.87200927734375,
+            250.65103149414062
+          ],
+          "euclidean_distance_px": 1.0309693070078585
+        },
+        {
+          "joint": "left_shoulder",
+          "golden_xy": [
+            515.0711669921875,
+            254.00033569335938
+          ],
+          "candidate_xy": [
+            515.7482299804688,
+            254.39492797851562
+          ],
+          "euclidean_distance_px": 0.7836564053238941
+        },
+        {
+          "joint": "right_shoulder",
+          "golden_xy": [
+            507.313232421875,
+            252.51364135742188
+          ],
+          "candidate_xy": [
+            508.965087890625,
+            251.96438598632812
+          ],
+          "euclidean_distance_px": 1.7407779732965991
+        },
+        {
+          "joint": "left_elbow",
+          "golden_xy": [
+            588.3331909179688,
+            245.26242065429688
+          ],
+          "candidate_xy": [
+            590.94287109375,
+            244.22048950195312
+          ],
+          "euclidean_distance_px": 2.8099913071200113
+        },
+        {
+          "joint": "right_elbow",
+          "golden_xy": [
+            576.4196166992188,
+            247.41433715820312
+          ],
+          "candidate_xy": [
+            579.9390258789062,
+            247.00509643554688
+          ],
+          "euclidean_distance_px": 3.5431227671573633
+        },
+        {
+          "joint": "left_wrist",
+          "golden_xy": [
+            631.9022827148438,
+            255.29275512695312
+          ],
+          "candidate_xy": [
+            633.6351928710938,
+            256.3207702636719
+          ],
+          "euclidean_distance_px": 2.014892734355174
+        },
+        {
+          "joint": "right_wrist",
+          "golden_xy": [
+            599.1785888671875,
+            266.6388244628906
+          ],
+          "candidate_xy": [
+            610.3463134765625,
+            263.0567321777344
+          ],
+          "euclidean_distance_px": 11.728148110005089
+        },
+        {
+          "joint": "left_hip",
+          "golden_xy": [
+            616.4016723632812,
+            217.23916625976562
+          ],
+          "candidate_xy": [
+            619.7334594726562,
+            217.62356567382812
+          ],
+          "euclidean_distance_px": 3.3538885270278453
+        },
+        {
+          "joint": "right_hip",
+          "golden_xy": [
+            613.5125122070312,
+            218.10311889648438
+          ],
+          "candidate_xy": [
+            617.1884155273438,
+            218.59970092773438
+          ],
+          "euclidean_distance_px": 3.7092935896265797
+        },
+        {
+          "joint": "left_knee",
+          "golden_xy": [
+            703.6520385742188,
+            258.0359191894531
+          ],
+          "candidate_xy": [
+            703.9592895507812,
+            260.9492492675781
+          ],
+          "euclidean_distance_px": 2.929487208831339
+        },
+        {
+          "joint": "right_knee",
+          "golden_xy": [
+            703.9288330078125,
+            247.82327270507812
+          ],
+          "candidate_xy": [
+            704.7803344726562,
+            253.76657104492188
+          ],
+          "euclidean_distance_px": 6.003986167624016
+        },
+        {
+          "joint": "left_ankle",
+          "golden_xy": [
+            802.1443481445312,
+            255.66714477539062
+          ],
+          "candidate_xy": [
+            800.9501342773438,
+            254.67263793945312
+          ],
+          "euclidean_distance_px": 1.554088352478501
+        },
+        {
+          "joint": "right_ankle",
+          "golden_xy": [
+            795.4185180664062,
+            231.46340942382812
+          ],
+          "candidate_xy": [
+            796.1331176757812,
+            232.05569458007812
+          ],
+          "euclidean_distance_px": 0.9281456286774126
+        }
+      ],
+      "mean_distance_px": 2.776897662891716,
+      "p95_distance_px": 7.148818556100227,
+      "max_distance_px": 11.728148110005089
+    }
+  },
+  "gate_failures": []
+}

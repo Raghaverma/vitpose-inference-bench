@@ -8,8 +8,8 @@ preserving pose accuracy? The plan is PyTorch baseline → ONNX → TensorRT
 *correct*, not just fast. PyTorch, ONNX Runtime, and TensorRT are competing
 inference *backends* this repo benchmarks against each other -- not a
 TensorRT-only exercise. The repo is built incrementally, stage by stage;
-Stages 0-5 (TensorRT FP16 with its batch-size sweep, plus GPU profiling)
-exist so far -- TensorRT INT8 and the async video pipeline do not yet.
+Stages 0-6 (through TensorRT FP16 with its batch-size sweep, GPU profiling,
+and TensorRT INT8) exist so far -- the video pipeline stages do not yet.
 
 ## System Architecture
 
@@ -21,10 +21,10 @@ heatmaps get decoded back into image-space keypoints. The optimization work
 in this repo targets **only the ViTPose++-L inference stage** -- the
 detector, crop geometry, preprocessing, and decoding are held fixed across
 every backend, so later comparisons are "did the pose model get faster,"
-not "did we change the pipeline." Measured branches (PyTorch FP16, ONNX
-faithful graph, ONNX + ORT fusion, TensorRT FP16) are solid and colored;
-TensorRT INT8 is drawn dashed and unfilled with no numbers on it, because
-it hasn't been measured yet -- see [Key Findings](#key-findings).
+not "did we change the pipeline." Every branch (PyTorch FP16, ONNX
+faithful graph, ONNX + ORT fusion, TensorRT FP16, TensorRT INT8) is measured
+and drawn solid; a branch without a result file would be drawn dashed and
+unfilled, with no number on it.
 
 Every figure in this README is generated from the repo's actual result
 files, never hand-typed:
@@ -338,8 +338,8 @@ confirmed to succeed (`torch.export` traces cleanly at any fixed batch
 value -- it's specifically the *dynamic* axis that fails), so the batch
 matrix (1/2/4/8/16, compared against Stage 1's PyTorch batch curve) is a
 well-scoped next step, not a blocked one -- deliberately left for its own
-controlled step rather than bundled in here. TensorRT INT8 is unmeasured and
-not implied anywhere in this repo (see the architecture diagram above).
+controlled step rather than bundled in here (it became Stage 4). TensorRT
+INT8 is Stage 6.
 
 Outputs land in `results/tensorrt/` (`engine_metadata.json`, `fp16.json`,
 `equivalence_report.json`); the `.engine` file itself stays local and
@@ -478,6 +478,191 @@ tools already installed with zero new footprint -- TensorRT's own
   TensorRT its edge -- so the *ratio* shrinks even though neither backend
   is near the hardware ceiling.
 
+## Stage 6 — TensorRT INT8
+
+**The question:** does INT8 buy speed on this model without moving the pose?
+
+### The first attempt shipped broken, and why that wasn't caught
+
+The first INT8 engine (commit `4efbbdd`) ran ONNX Runtime's `quantize_static`
+with its default op set, entropy-calibrated on Gate A's synthetic corpus, and
+built fine. It was also wrong: **72 px mean keypoint error on the golden crop**,
+and on real crops 5.7 px median / 48 px p95, with 57% of joints moved more
+than 5 px. It was also **no faster than FP16** (5.09 vs 5.11 ms at batch 1, timed in the same process). Nothing
+flagged it: it was only ever compared against the one golden crop, and its
+calibration corpus was 96 perturbations of that same photo.
+
+Running the **same Q/DQ graph in ONNX Runtime** gave the same error (76.6 px
+on golden), so the TensorRT build was not the problem: the recipe was. ORT's
+default quantized almost every tensor: residual Adds, LayerNorm gamma/beta,
+every Linear bias, Softmax, the MoE mask arithmetic, and the heatmap output.
+Its graph also carried float16 Q/DQ scales at opset 18, which the ONNX spec
+doesn't allow (float16 scales arrived in opset 19); the old note calling the
+`onnx.checker` failure a "checker limitation" was wrong, and ORT itself
+refuses to load that graph. TensorRT's parser tolerated it.
+
+### The recipe
+
+Bisecting that graph by consumer type, without recalibrating, isolated it
+(errors in 256×192 model-input pixels, against FP16, on 400 held-out real
+crops, ONNX Runtime):
+
+| Q/DQ kept on | Median | p95 | Joints > 5 px |
+|---|---|---|---|
+| everything (ORT default, as shipped) | 6.1 | 48.7 | 58.7% |
+| MatMul + Conv inputs only | 0.44 | 1.77 | 0.33% |
+| + per-channel weights | 0.42 | 1.65 | 0.15% |
+| + real-footage calibration (p99.99) | **0.32** | **1.25** | 0.27% |
+
+`conversion/quantize_onnx.py` now builds that directly on the faithful FP16
+export instead of post-editing ORT's output:
+
+- **Q/DQ on MatMul inputs only**: per block, the 12 Linear MatMuls (q, k, v,
+  attention output, fc1, fc2, 6 MoE experts) and the 2 attention
+  activation×activation MatMuls. LayerNorm, GELU, Softmax, residuals, biases,
+  the MoE mask, the patch-embedding Conv and the deconvolution head stay FP16.
+- **Weights**: per-output-channel symmetric INT8, absmax.
+- **Activations**: per-tensor symmetric INT8 at the 99.99th percentile of
+  |x| over 256 real calibration crops, collected in PyTorch with forward
+  hooks (4 s, vs about an hour for the old ORT calibration). Softmax
+  probabilities use amax 1.0 rather than a percentile, which would clip the
+  largest attention weights.
+- Scales are committed (`results/onnx/int8_calibration_scales.json`) and
+  shared by every batch size's export, so rebuilding needs no footage.
+- Opset 19; `onnx.checker.check_model(full_check=True)` passes.
+
+Two alternatives were measured and rejected: keeping the attention
+act×act MatMuls in FP16 is more accurate (0.30 vs 0.39 px median) but costs
+throughput at batch 16 (445 vs 524 crops/s, since TensorRT fuses the
+quantized attention much better); keeping fc2 + experts in FP16 leaves only
+a 1.05× speedup.
+
+### The calibration and evaluation corpus is real footage now
+
+`calibration/real_corpus.py` builds it from an AutoClipping distillation
+dataset: person crops from real cricket net videos, cut with the production
+person detector and crop warp. 256 calibration crops come from 7 videos and
+400 evaluation crops from 3 **other** videos (split by video, plus a
+content-fingerprint check against re-uploads), with PyTorch FP16 reference
+heatmaps stored for the evaluation crops. Crops are private footage:
+`calibration/real/` is gitignored and only `calibration/real_manifest.json`
+is committed (see `calibration/README.md`).
+
+### Gate C: real crops, not the golden crop
+
+`tests/test_tensorrt_int8_equivalence.py` runs all 400 held-out crops through
+every INT8 engine in batches of B, checking each slot against that crop's
+own reference. The four gates, in `compare_golden.py`: heatmap RMSE < 0.01,
+median keypoint error < 0.6 px, p95 < 2.5 px, fewer than 1% of joints moved
+more than 5 px. The old recipe fails every one by an order of magnitude.
+The golden crop is still reported (2.8 px mean, 11.7 px max in source
+pixels, against 72 px for the replaced engine) as a tripwire, since it's a harder case than typical.
+
+### Results
+
+Throughput is from `backends/tensorrt.py --precision int8`, which times INT8
+and the same-batch FP16 engine in alternating rounds in one process. That
+comparison is the ratio to use: the L4 here is power-capped, and its clocks
+drift a few percent between runs, so dividing into `fp16*.json` from Stage 4
+would fold that drift in. Accuracy is Gate C on the 400 held-out real crops,
+in 256×192 model-input pixels.
+
+| Batch | INT8 (img/s) | FP16, same run (img/s) | **INT8 / FP16** | Median error | p95 error | Joints > 5 px |
+|---|---|---|---|---|---|---|
+| 1 | 215 | 192 | **1.12x** | 0.31 px | 1.28 px | 0.25% |
+| 2 | 318 | 261 | **1.22x** | 0.31 px | 1.27 px | 0.30% |
+| 4 | 426 | 297 | **1.44x** | 0.31 px | 1.27 px | 0.30% |
+| 8 | 501 | 291 | **1.72x** | 0.31 px | 1.27 px | 0.30% |
+| 16 | 523 | 300 | **1.74x** | 0.31 px | 1.27 px | 0.30% |
+
+**The honest headline: INT8 is worth it only at batch ≥ 4.** At batch 1
+the GEMMs are too small (192 tokens per crop) to be compute-bound, and INT8
+buys 12%. From batch 8 up it's 1.7x over TensorRT FP16. That's the regime
+Stage 4 showed FP16 TensorRT running out of headroom in (its throughput
+plateaus around 290–310 img/s from batch 4). Accuracy is the same at
+every batch size, so each slot matches its own standalone reference and
+nothing leaks between batch slots. Weights are half the size: the engine
+file is 430–446 MB, against 833–835 MB for FP16.
+
+![Throughput vs batch size, including TensorRT INT8](docs/images/throughput_vs_batch.png)
+
+### Precision audit
+
+`conversion/build_int8_engine.py` reads every layer's input and output
+dtypes back from the built engine. Classifying by output dtype alone (Stage
+3's method) is misleading here, because an INT8 GEMM writes its dequantized
+result as FP32 or FP16. At batch 1 that put 168 GEMMs in the "FP32" bucket.
+Counting by input instead, **264/324 layers at batch 1 and 240/348 at batch
+16 execute on INT8 data**:
+
+- **Batch 1:** 168 `gemm: Int8 -> Float` and 24 `gemm: Int8 -> Int8` (the fused
+  q/k/v projection).
+- **Batch ≥ 4:** TensorRT fuses the same GEMMs with their epilogue into
+  `fusion: Int8 -> Half` layers.
+- **Still FP16:** the patch-embedding convolution, the deconvolution head, and
+  the LayerNorm/GELU/softmax elementwise kernels, as the recipe intends.
+
+### Findings along the way
+
+- **HF's `post_process_pose_estimation` misdecodes at ≥ 300 boxes per call**
+  (transformers 5.17): `post_dark_unbiased_data_processing` computes its
+  flat heatmap index from float32 coordinates, which stop being exact past
+  2²⁴ elements (300 crops × 17 × 66 × 50). Every box from index 299 on
+  was decoded about 4 px off. `compare_golden.decode_crop_batch` decodes
+  in chunks of 128. Earlier stages decoded one crop at a time and are
+  unaffected.
+- **ORT 1.30 can't expose intermediate tensors of this FP16 graph**
+  (`InsertedPrecisionFreeCast` type error), which is why calibration runs in
+  PyTorch.
+- **TensorRT reads a strided input as if it were dense.** The first Gate C
+  run failed at 48 px on every batch size while the golden crop passed.
+  The real crops' pixel array was a transposed numpy view. PyTorch honours
+  strides, TensorRT's `set_tensor_address` doesn't. `run_inference` now
+  refuses non-contiguous inputs.
+
+### In production: the MoE-fused engine, end to end
+
+The same recipe and scales were applied to AutoClipping's MoE-fused,
+dynamic-batch export (`scripts/export_vitpose_trt.py` there; profile
+[1, 64, 128]). That export has 6 Linear MatMuls per block instead of 12, and
+`analyze_graph` handles both. On the 400 real crops, INT8 is 0.31 px median /
+1.25 px p95 at every batch size. The fused FP16 engine is 0.010 px.
+
+The forward alone, at production's 64-crop chunk:
+
+| PyTorch fused FP16 (production) | TensorRT FP16 | TensorRT INT8 |
+|---|---|---|
+| 270 img/s | 319 img/s | **595 img/s (2.20x)** |
+
+End to end it doesn't pay. Across 8 bowler videos and 2 stance clips, with
+AutoClipping's pipeline unchanged apart from `vitpose.engine`:
+
+- **FP16 engine:** 1.00x, and outputs unchanged.
+- **INT8 engine:**
+  - Speed: 1.04x on bowler and 1.02–1.22x on stance. Pose is a small share
+    of a job once detection, decoding and ball tracking are counted.
+  - Output: it changes the delivery set on 3 of 8 bowler videos and shifts
+    half the release frames. Release-aligned logic amplifies sub-pixel pose
+    drift.
+
+Neither engine is enabled there. Evidence:
+`AutoClipping/test_output/vitpose_int8_2026-09-28/RESULTS.md`.
+
+### Scope
+
+Only dataset_index 0 (COCO, the expert production runs) is calibrated or
+validated. The engine still accepts other experts, but their accuracy is
+unmeasured. This is the unfused MoE graph: all 6 experts are still computed.
+
+```bash
+python -m calibration.real_corpus build --distill-dir <AutoClipping distill dataset>   # once
+python -m conversion.quantize_onnx [--batch-size B] [--recalibrate]                    # Gate B
+python -m conversion.build_int8_engine [--batch-size B]                                # build + audit
+pytest tests/test_tensorrt_int8_equivalence.py -v                                      # Gate C
+python -m backends.tensorrt --precision int8 [--batch-size B]                          # benchmark
+python aggregate_batch_matrix.py && python visualizations/generate_all.py
+```
+
 ## Key Findings
 
 1. ViTPose++-L is the dominant stage in the measured single-image pipeline
@@ -552,16 +737,45 @@ tools already installed with zero new footprint -- TensorRT's own
     GEMMs, which amortizes away PyTorch's per-op overhead disadvantage
     faster than it erodes TensorRT's fixed fusion advantage. See
     `profiling/README.md` for the full evidence chain.
-18. **TensorRT INT8 and the async video pipeline have NOT yet been built**
-    and are not represented as completed anywhere in this repo.
+18. The first INT8 engine (ORT `quantize_static` defaults, synthetic
+    calibration) was broken: 72 px on the golden crop, 5.7 px median / 48 px
+    p95 on real crops. It was no faster than FP16 either. The same Q/DQ graph
+    in ONNX Runtime was just as wrong, so the fault was the recipe
+    (quantizing residuals, LayerNorm, biases, Softmax and the output), not
+    TensorRT. One golden crop plus a calibration corpus derived from the same
+    photo couldn't have caught it.
+19. **INT8 with Q/DQ on MatMul inputs only** (per-channel weights, activations
+    calibrated at p99.99 on real footage) moves keypoints by 0.31 px median
+    and 1.27 px p95 on 400 held-out real crops, and passes all four Gate C
+    thresholds at every batch size.
+20. **INT8's speedup over TensorRT FP16 grows with batch size**: 1.12x at
+    batch 1, 1.44x at 4, 1.72x at 8 and 1.74x at 16 (523 vs 300 img/s),
+    timed in the same process. At batch 1 the GEMMs are too small to be
+    compute-bound. Keeping the attention MatMuls in FP16 costs a large part
+    of the batch-16 gain (445 img/s), and keeping fc2 + experts in FP16
+    costs nearly all of it.
+21. Along the way: HF's `post_process_pose_estimation` misdecodes at ≥ 300
+    boxes per call (a float32 flat index in DARK), and ORT's QDQ output used
+    float16 scales at opset 18, which the ONNX spec doesn't allow. Both are
+    worked around here, and neither affects earlier stages' results.
+22. **A 2.2x faster pose forward was worth ~1.04x end to end** in the
+    production pipeline this repo feeds (AutoClipping, MoE-fused INT8
+    engine, 8 bowler videos). It also moved the delivery set on 3 of them,
+    so it isn't enabled there. The FP16 engine was output-neutral but gave
+    1.00x. Isolated-model speedups are only a proxy for this, in both
+    directions.
+23. **The async video pipeline has NOT yet been built** and is not
+    represented as completed anywhere in this repo. INT8 is validated for
+    MoE expert 0 (COCO) only.
 
 ## Roadmap
 
-- **Stage 6** — TensorRT INT8: calibration dataset design, then accuracy vs.
-  performance tradeoff against the same golden reference used throughout.
-  **Gate A (calibration corpus) is complete** — see
-  [`calibration/README.md`](calibration/README.md). Gates B–D (INT8 engine
-  build, numerical equivalence, precision audit) are not.
+- ~~**Stage 6** — TensorRT INT8~~ — done, see [Stage 6](#stage-6--tensorrt-int8).
+  INT8 on the MoE-fused, dynamic-batch export was also measured end to end
+  in AutoClipping and isn't worth enabling there
+  ([details](#in-production-the-moe-fused-engine-end-to-end)). Open
+  follow-ups: validating other experts if they're ever used, and a
+  pose-quality check against human labels rather than against FP16.
 - **Stage 7** — a real synchronous video pipeline (decode → YOLO → crop →
   TensorRT → pose decode) to see whether Stage 5's postprocessing-share
   finding actually becomes the bottleneck once decode+detection are added.

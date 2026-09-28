@@ -1,5 +1,5 @@
 {
-  "note": "Every backend measured with GENUINELY DISTINCT crops per batch slot (golden/build_distinct_batch.py), never .repeat() -- see backends/pytorch.py, backends/onnxruntime.py, backends/tensorrt.py. Each cell was gated on a per-slot cross-slot-correctness check before being recorded here.",
+  "note": "Every backend measured with GENUINELY DISTINCT crops per batch slot (golden/build_distinct_batch.py), never .repeat() -- see backends/pytorch.py, backends/onnxruntime.py, backends/tensorrt.py. Each cell was gated on a per-slot cross-slot-correctness check before being recorded here. tensorrt_int8 (Stage 6) is gated on the 400 held-out real crops instead (calibration/real_corpus.py) and timed on real crops at dataset_index 0; its paired_speedup_vs_fp16 is measured against the FP16 engine in the same process, the ratio to use rather than dividing across the two columns.",
   "cells": [
     {
       "batch": 1,
@@ -29,8 +29,24 @@
         "engine_file_size_mb": 833.3791847229004,
         "activation_workspace_mb": 4.9697265625
       },
+      "tensorrt_int8": {
+        "mean_ms": 4.6315652708290145,
+        "fps": 215.90972846659412,
+        "p50_ms": 4.628579510608688,
+        "p95_ms": 4.66042902553454,
+        "p99_ms": 4.666890017688274,
+        "device_vram_mb": 2521.125,
+        "engine_file_size_mb": 429.6056785583496,
+        "activation_workspace_mb": 3.4697265625,
+        "real_crop_median_err_px": 0.31420329213142395,
+        "real_crop_p95_err_px": 1.2817275524139404,
+        "paired_speedup_vs_fp16": 1.1216454890667784,
+        "paired_fp16_median_ms": 5.215169441071339,
+        "paired_int8_median_ms": 4.649570200126618
+      },
       "tensorrt_speedup_vs_pytorch": 4.167645794734854,
-      "tensorrt_speedup_vs_ort": 2.037447697360316
+      "tensorrt_speedup_vs_ort": 2.037447697360316,
+      "tensorrt_int8_speedup_vs_pytorch": 4.554458628551872
     },
     {
       "batch": 2,
@@ -60,8 +76,24 @@
         "engine_file_size_mb": 835.5702857971191,
         "activation_workspace_mb": 8.43994140625
       },
+      "tensorrt_int8": {
+        "mean_ms": 6.197190638049506,
+        "fps": 322.7268800995731,
+        "p50_ms": 6.1980180034879595,
+        "p95_ms": 6.22481299797073,
+        "p99_ms": 6.231183011550456,
+        "device_vram_mb": 2541.125,
+        "engine_file_size_mb": 445.4540672302246,
+        "activation_workspace_mb": 6.9375,
+        "real_crop_median_err_px": 0.3134765625,
+        "real_crop_p95_err_px": 1.2670516967773438,
+        "paired_speedup_vs_fp16": 1.2178307604773115,
+        "paired_fp16_median_ms": 7.6578874117694795,
+        "paired_int8_median_ms": 6.288137613446452
+      },
       "tensorrt_speedup_vs_pytorch": 2.9048854613742017,
-      "tensorrt_speedup_vs_ort": 1.8988380232056836
+      "tensorrt_speedup_vs_ort": 1.8988380232056836,
+      "tensorrt_int8_speedup_vs_pytorch": 3.5052010304397965
     },
     {
       "batch": 4,
@@ -91,8 +123,24 @@
         "engine_file_size_mb": 832.2477531433105,
         "activation_workspace_mb": 19.5009765625
       },
+      "tensorrt_int8": {
+        "mean_ms": 9.337982501019724,
+        "fps": 428.3580526696418,
+        "p50_ms": 9.265309025067836,
+        "p95_ms": 9.6686469623819,
+        "p99_ms": 9.675077046267688,
+        "device_vram_mb": 2567.125,
+        "engine_file_size_mb": 444.8769187927246,
+        "activation_workspace_mb": 13.875,
+        "real_crop_median_err_px": 0.31354549527168274,
+        "real_crop_p95_err_px": 1.2664973735809326,
+        "paired_speedup_vs_fp16": 1.4367880487498714,
+        "paired_fp16_median_ms": 13.491271015955135,
+        "paired_int8_median_ms": 9.389882542309351
+      },
       "tensorrt_speedup_vs_pytorch": 1.5667331223890861,
-      "tensorrt_speedup_vs_ort": 1.7545173145541615
+      "tensorrt_speedup_vs_ort": 1.7545173145541615,
+      "tensorrt_int8_speedup_vs_pytorch": 2.273619253988249
     },
     {
       "batch": 8,
@@ -122,8 +170,24 @@
         "engine_file_size_mb": 835.463794708252,
         "activation_workspace_mb": 33.7509765625
       },
+      "tensorrt_int8": {
+        "mean_ms": 15.68763307062909,
+        "fps": 509.95583361634505,
+        "p50_ms": 15.611615526722744,
+        "p95_ms": 16.172576986718923,
+        "p99_ms": 16.192907991353422,
+        "device_vram_mb": 2581.125,
+        "engine_file_size_mb": 446.25888442993164,
+        "activation_workspace_mb": 27.75,
+        "real_crop_median_err_px": 0.3134765625,
+        "real_crop_p95_err_px": 1.2670516967773438,
+        "paired_speedup_vs_fp16": 1.7195553656048828,
+        "paired_fp16_median_ms": 27.46525871043559,
+        "paired_int8_median_ms": 15.972302642767318
+      },
       "tensorrt_speedup_vs_pytorch": 1.2881953516024127,
-      "tensorrt_speedup_vs_ort": 1.552875746734874
+      "tensorrt_speedup_vs_ort": 1.552875746734874,
+      "tensorrt_int8_speedup_vs_pytorch": 2.2637292667296847
     },
     {
       "batch": 16,
@@ -153,8 +217,24 @@
         "engine_file_size_mb": 835.4576301574707,
         "activation_workspace_mb": 67.5009765625
       },
+      "tensorrt_int8": {
+        "mean_ms": 30.00433737761341,
+        "fps": 533.2562355447245,
+        "p50_ms": 29.919499502284452,
+        "p95_ms": 30.4037649766542,
+        "p99_ms": 30.936095979996026,
+        "device_vram_mb": 2629.125,
+        "engine_file_size_mb": 446.49858474731445,
+        "activation_workspace_mb": 55.5,
+        "real_crop_median_err_px": 0.3134765625,
+        "real_crop_p95_err_px": 1.2670516967773438,
+        "paired_speedup_vs_fp16": 1.7434657804024416,
+        "paired_fp16_median_ms": 53.327959507587366,
+        "paired_int8_median_ms": 30.587327899993397
+      },
       "tensorrt_speedup_vs_pytorch": 1.3365580766688245,
-      "tensorrt_speedup_vs_ort": 1.7950211812826593
+      "tensorrt_speedup_vs_ort": 1.7950211812826593,
+      "tensorrt_int8_speedup_vs_pytorch": 2.2931012253824
     }
   ]
 }

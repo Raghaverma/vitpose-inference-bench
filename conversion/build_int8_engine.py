@@ -3,10 +3,13 @@
 
     python -m conversion.build_int8_engine
 
+    python -m conversion.build_int8_engine --batch-size 16
+
 Builds ONLY from conversion/quantize_onnx.py's exact, sha256-pinned QDQ
-output (results/onnx/vitpose_plus_l_int8_qdq.onnx) -- the entropy-calibrated
-Q/DQ graph, itself built from the same faithful FP16 export
-conversion/build_engine.py uses, per that script's own sha256 gate. This
+output (results/onnx/vitpose_plus_l_int8_qdq[_b{B}].onnx) -- Q/DQ on MatMul
+inputs only, activation scales calibrated on the real-footage corpus
+(calibration/real_corpus.py), itself built from the same faithful FP16
+export conversion/build_engine.py uses, per that script's own sha256 gate. This
 script does no calibration of its own and imports no calibrator class: as
 covered at length in conversion/quantize_onnx.py's module docstring,
 TensorRT 11.3.0.99's Python API has no `BuilderFlag.INT8` and no
@@ -22,13 +25,13 @@ placement, not a builder flag, is what makes this an INT8 build.
 
 Before building, this script verifies TWO independent chains of trust, not
 one:
-  1. results/onnx/vitpose_plus_l_int8_qdq.onnx's sha256 against Gate B's own
-     record of what it wrote (results/onnx/int8_quantization_metadata.json).
-  2. calibration/manifest.json's sha256 against Gate B's own record of what
-     it calibrated against -- catching the case where the calibration corpus
-     was regenerated (same filename, different content) AFTER Gate B ran,
-     which check (1) alone can't see (the QDQ onnx's sha256 wouldn't change
-     retroactively just because its calibration inputs did).
+  1. the QDQ onnx's sha256 against Gate B's own record of what it wrote
+     (results/onnx/int8_quantization_metadata[_b{B}].json).
+  2. calibration/real_manifest.json's sha256 against Gate B's own record of
+     what it calibrated against -- catching the case where the calibration
+     corpus was regenerated (same filename, different content) AFTER Gate B
+     ran, which check (1) alone can't see (the QDQ onnx's sha256 wouldn't
+     change retroactively just because its calibration inputs did).
 A mismatch in either is a hard refusal, same as conversion/build_engine.py's
 onnx_sha256 gate -- never a silent rebuild-from-whatever's-on-disk.
 
@@ -79,24 +82,32 @@ TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--onnx-path", type=Path,
-                    default=REPO_ROOT / "results" / "onnx" / "vitpose_plus_l_int8_qdq.onnx")
-    p.add_argument("--onnx-metadata", type=Path,
-                    default=REPO_ROOT / "results" / "onnx" / "int8_quantization_metadata.json",
-                    help="Gate B's own record (conversion/quantize_onnx.py). Verified against "
+    p.add_argument("--batch-size", type=int, default=1)
+    p.add_argument("--onnx-path", type=Path, default=None,
+                    help="Defaults to results/onnx/vitpose_plus_l_int8_qdq[_b{B}].onnx.")
+    p.add_argument("--onnx-metadata", type=Path, default=None,
+                    help="Gate B's own record (conversion/quantize_onnx.py), defaults to "
+                         "results/onnx/int8_quantization_metadata[_b{B}].json. Verified against "
                          "both --onnx-path's actual sha256 AND the live calibration manifest's "
                          "sha256 before building -- see module docstring.")
     p.add_argument("--calibration-manifest", type=Path,
-                    default=REPO_ROOT / "calibration" / "manifest.json")
-    p.add_argument("--engine-path", type=Path, default=REPO_ROOT / "engines" / "vitpose_b1_int8.engine")
-    p.add_argument("--output", type=Path,
-                    default=REPO_ROOT / "results" / "tensorrt" / "int8_engine_metadata.json")
+                    default=REPO_ROOT / "calibration" / "real_manifest.json")
+    p.add_argument("--engine-path", type=Path, default=None,
+                    help="Defaults to engines/vitpose_b{B}_int8.engine.")
+    p.add_argument("--output", type=Path, default=None,
+                    help="Defaults to results/tensorrt/int8_engine_metadata[_b{B}].json.")
     p.add_argument("--mode", choices=["smoke", "tuned"], default="tuned",
                     help="smoke = minimal tactic search, fast, NOT benchmarkable. tuned = full "
                          "autotuning, the only mode allowed to produce a results/tensorrt/int8*.json "
                          "benchmark later (Stage 6E). Same convention as conversion/build_engine.py.")
     p.add_argument("--workspace-mb", type=int, default=4096)
     args = p.parse_args()
+    sfx = "" if args.batch_size == 1 else f"_b{args.batch_size}"
+    args.onnx_path = args.onnx_path or REPO_ROOT / "results" / "onnx" / f"vitpose_plus_l_int8_qdq{sfx}.onnx"
+    args.onnx_metadata = (args.onnx_metadata
+                          or REPO_ROOT / "results" / "onnx" / f"int8_quantization_metadata{sfx}.json")
+    args.engine_path = args.engine_path or REPO_ROOT / "engines" / f"vitpose_b{args.batch_size}_int8.engine"
+    args.output = args.output or REPO_ROOT / "results" / "tensorrt" / f"int8_engine_metadata{sfx}.json"
     return args
 
 
@@ -123,6 +134,27 @@ def classify_layer_precision(layers: list[dict]) -> dict[str, int]:
         label = "NO_OUTPUT_TENSOR" if not output_dtypes else "+".join(sorted(output_dtypes))
         counts[label] = counts.get(label, 0) + 1
     return counts
+
+
+def _dtypes(tensors: list[dict]) -> str:
+    return "+".join(sorted({t.get("Datatype", "UNKNOWN") for t in tensors})) or "none"
+
+
+def classify_layer_io(layers: list[dict]) -> tuple[dict[str, int], int]:
+    """What the output-dtype histogram above can't show: an INT8 GEMM reads Int8 and writes
+    its dequantized result as Float or Half -- so by output dtype alone it lands in the FP32
+    or FP16 bucket (168 'gemm: Int8 -> Float' layers on the batch-1 engine; from batch 4 up
+    TensorRT fuses the same GEMMs with their epilogue into 'fusion: Int8 -> Half' layers).
+    Returns the '<LayerType>: <input dtypes> -> <output dtypes>' histogram and the number of
+    layers whose inputs are all Int8, i.e. that execute on INT8 data."""
+    sig: dict[str, int] = {}
+    int8_input = 0
+    for layer in layers:
+        ins, outs = _dtypes(layer.get("Inputs", [])), _dtypes(layer.get("Outputs", []))
+        key = f"{layer.get('LayerType', '?')}: {ins} -> {outs}"
+        sig[key] = sig.get(key, 0) + 1
+        int8_input += ins == "Int8"
+    return dict(sorted(sig.items(), key=lambda kv: -kv[1])), int8_input
 
 
 def build(args: argparse.Namespace) -> dict:
@@ -198,6 +230,7 @@ def build(args: argparse.Namespace) -> dict:
     fp16_layers = precision_counts.get("Half", 0)
     fp32_layers = precision_counts.get("Float", 0)
     mixed_layers = total_layers - int8_layers - fp16_layers - fp32_layers
+    io_signatures, int8_input_layers = classify_layer_io(layers)
 
     gpu_name = torch.cuda.get_device_name(0)
     metadata = {
@@ -206,10 +239,10 @@ def build(args: argparse.Namespace) -> dict:
         "source": str(args.onnx_path.name),
         "onnx_sha256": actual_onnx_sha256,
         "calibration_manifest_sha256": actual_manifest_sha256,
-        "calibration_sample_count": onnx_metadata["calibration_sample_count"],
-        "calibration_per_expert_counts": onnx_metadata["calibration_per_expert_counts"],
-        "calibration_corpus_label": onnx_metadata["calibration_corpus_label"],
-        "quantization_config": onnx_metadata["quantization_config"],
+        "calibration_num_crops": onnx_metadata["calibration_num_crops"],
+        "dataset_index_validated": onnx_metadata["dataset_index_validated"],
+        "quantization_recipe": onnx_metadata["recipe"],
+        "scales_sha256": onnx_metadata["scales_sha256"],
         "engine_path": str(args.engine_path),
         "engine_sha256": sha256_file(args.engine_path),
         "precision_requested": "INT8 (strongly-typed network, explicit Q/DQ graph from "
@@ -217,7 +250,7 @@ def build(args: argparse.Namespace) -> dict:
                                 "module docstrings for why there is no BuilderFlag.INT8 step here)",
         "mode": args.mode,
         "benchmarkable": args.mode == "tuned",
-        "batch": 1,
+        "batch": args.batch_size,
         "opset": onnx_opset,
         "build_wall_clock_s": build_seconds,
         "builder_optimization_level": config.builder_optimization_level,
@@ -240,10 +273,13 @@ def build(args: argparse.Namespace) -> dict:
             "fraction_fp16": fp16_layers / total_layers if total_layers else None,
             "fraction_fp32": fp32_layers / total_layers if total_layers else None,
             "fraction_mixed": mixed_layers / total_layers if total_layers else None,
-            "note": "Classified by each layer's OUTPUT tensor Datatype(s), same technique as "
-                    "conversion/build_engine.py's FP16 precision_audit -- 'mixed' layers "
-                    "(e.g. Half+Int8) straddle a quantize/dequantize boundary and are NOT "
-                    "folded into either the int8 or fp16 count.",
+            "note": "The *_layers counts above classify by each layer's OUTPUT tensor Datatype(s), "
+                    "same technique as conversion/build_engine.py's FP16 precision_audit -- 'mixed' "
+                    "layers (e.g. Half+Int8) straddle a quantize/dequantize boundary. By that measure "
+                    "an INT8 GEMM that writes Float counts as FP32; int8_input_layers / "
+                    "layer_io_signature_histogram below count what actually reads INT8.",
+            "int8_input_layers": int8_input_layers,
+            "layer_io_signature_histogram": io_signatures,
         },
         "env": {
             "python": platform.python_version(),
@@ -265,6 +301,7 @@ def build(args: argparse.Namespace) -> dict:
               f"({fp32_layers/total_layers:.1%})  {mixed_layers}/{total_layers} mixed "
               f"({mixed_layers/total_layers:.1%})")
         print(f"[build_int8_engine] full histogram: {precision_counts}")
+        print(f"[build_int8_engine] layers reading INT8: {int8_input_layers}/{total_layers}")
     print(f"[build_int8_engine] VRAM: engine {engine_file_size_mb:.1f}MB  "
           f"activation workspace {activation_workspace_mb:.1f}MB  "
           f"build-phase delta {build_phase_vram_delta_mb:.1f}MB")

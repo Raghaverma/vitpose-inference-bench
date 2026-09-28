@@ -9,17 +9,14 @@ optimization branch rooted at ViTPose++-L -- the single stage this whole
 project targets (see docs/images/stage_breakdown.png: everything else in the
 pipeline is a small, fixed cost by comparison).
 
-PyTorch FP16, ONNX, and (once built) TensorRT FP16 are measured branches --
-real numbers, read from results/*.json. TensorRT INT8 is drawn as a real
-part of the plan -- box sized, positioned, and labeled -- but in a visibly
-distinct dashed/unfilled style with no numeric value on it at all, because
-it hasn't been measured yet. There is no code path in this script that could
-put a number on that box: _data.NOT_YET_MEASURED is never passed through
-_data.numeric(), so a plottable value for it literally cannot be constructed
-here by accident. This is also the first real test of that design promise --
-TensorRT FP16 used to be unmeasured too; adding its real number below was a
-data change (loading results/tensorrt/fp16.json), not a rewrite of this
-script's layout.
+PyTorch FP16, ONNX, TensorRT FP16 and (once built) TensorRT INT8 are
+measured branches -- real numbers, read from results/*.json. A branch whose
+result file doesn't exist is drawn in a visibly distinct dashed/unfilled
+style with no numeric value on it at all: _data.NOT_YET_MEASURED is never
+passed through _data.numeric(), so a plottable value for it literally cannot
+be constructed here by accident. TensorRT FP16 and then INT8 both started
+out unmeasured; adding their numbers was a data change (loading
+results/tensorrt/fp16.json, int8.json), not a rewrite of the layout.
 """
 from __future__ import annotations
 
@@ -33,6 +30,7 @@ from visualizations._data import (
     load_stage0,
     load_stage2,
     load_stage3_fp16,
+    load_stage6_int8,
     numeric,
 )
 from visualizations._diagram import Edge, Node, render_diagram
@@ -42,6 +40,7 @@ from visualizations._style import (
     INK_MUTED,
     INK_PRIMARY,
     INK_SECONDARY,
+    MAGENTA,
     ORANGE,
     YELLOW,
     apply_style,
@@ -56,6 +55,7 @@ def generate(output_path: Path = OUTPUT_PATH) -> Path:
     stage2 = load_stage2()
     runs = stage2["benchmark"]["runs"]
     stage3 = load_stage3_fp16()
+    stage6 = load_stage6_int8()
 
     pytorch_ms = numeric(stage0["mean_latency_ms"], "pytorch baseline")
     faithful_ms = numeric(runs["unoptimized_graph"]["mean_ms"], "onnx faithful")
@@ -78,6 +78,14 @@ def generate(output_path: Path = OUTPUT_PATH) -> Path:
         trt_router_label = "NEXT: TensorRT"
         edge_to_fp16_style = "unmeasured"
 
+    if stage6 is not None:
+        trt_int8_ms = numeric(stage6["benchmark"]["mean_ms"], "tensorrt int8")
+        trt_int8_node = Node("trt_int8", "TensorRT INT8", rank=7, lane=-2.3, style="measured",
+                              color=MAGENTA, sublabel=f"{trt_int8_ms:.2f} ms -- {pytorch_ms / trt_int8_ms:.2f}x")
+    else:
+        _unused = NOT_YET_MEASURED
+        trt_int8_node = Node("trt_int8", "TensorRT INT8", rank=7, lane=-2.3, style="unmeasured")
+
     nodes = [
         # Main top-down pose pipeline (the spine).
         Node("input", "Input image", rank=0, lane=0),
@@ -98,7 +106,7 @@ def generate(output_path: Path = OUTPUT_PATH) -> Path:
         Node("next_trt", trt_router_label, rank=6, lane=-1.6, box_w=2.1,
              style="default" if stage3 is not None else "unmeasured"),
         trt_fp16_node,
-        Node("trt_int8", "TensorRT INT8", rank=7, lane=-2.3, style="unmeasured"),
+        trt_int8_node,
     ]
     edges = [
         Edge("input", "yolo"), Edge("yolo", "crop"), Edge("crop", "vitpose"),
@@ -107,7 +115,7 @@ def generate(output_path: Path = OUTPUT_PATH) -> Path:
         Edge("onnx", "onnx_faithful"), Edge("onnx", "onnx_optimized"),
         Edge("onnx_faithful", "next_trt"), Edge("onnx_optimized", "next_trt"),
         Edge("next_trt", "trt_fp16", style=edge_to_fp16_style),
-        Edge("next_trt", "trt_int8", style="unmeasured"),
+        Edge("next_trt", "trt_int8", style="default" if stage6 is not None else "unmeasured"),
     ]
 
     fig, ax = plt.subplots(figsize=(17, 8.5))
@@ -135,10 +143,15 @@ def generate(output_path: Path = OUTPUT_PATH) -> Path:
         legend_elements.append(
             plt.Line2D([0], [0], marker="s", color="none", markerfacecolor=YELLOW, markersize=11,
                         label="Measured -- TensorRT FP16"))
-    legend_elements.append(
-        plt.Line2D([0], [0], marker="s", color="none", markerfacecolor="none",
-                    markeredgecolor=INK_MUTED, markersize=11, linestyle="none",
-                    label="Not yet measured -- TensorRT INT8"))
+    if stage6 is not None:
+        legend_elements.append(
+            plt.Line2D([0], [0], marker="s", color="none", markerfacecolor=MAGENTA, markersize=11,
+                        label="Measured -- TensorRT INT8 (batch 1)"))
+    else:
+        legend_elements.append(
+            plt.Line2D([0], [0], marker="s", color="none", markerfacecolor="none",
+                        markeredgecolor=INK_MUTED, markersize=11, linestyle="none",
+                        label="Not yet measured -- TensorRT INT8"))
     ax.legend(handles=legend_elements, loc="lower center", bbox_to_anchor=(0.5, -0.14),
               ncol=2, fontsize=9.5, frameon=False)
 
