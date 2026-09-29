@@ -140,6 +140,18 @@ def wait_until_quiet(own_pids: set[int] | None = None, quiet_s: float = 15.0, gp
             return waited
 
 
+def wait_for_no_prod(log=print, poll_s: float = 10.0) -> None:
+    """For offline GPU work that isn't timed (accuracy evaluations, engine builds): start only
+    while no prod job holds a GPU slot, so the memory it takes can't be what a prod job fails to
+    allocate. Weaker than wait_until_quiet(): other tenants' load doesn't matter here."""
+    waited = 0.0
+    while prod_lock_holders():
+        if waited % 300 < poll_s:
+            log(f"[gpu_guard] prod job running -- waiting before GPU work ({waited:.0f}s so far)")
+        time.sleep(poll_s)
+        waited += poll_s
+
+
 class GpuMonitor:
     """Background sampler for one measurement window: `with GpuMonitor(own_pids) as mon: ...`,
     then `mon.report()`. Foreign GPU processes already resident at the start are tolerated (the

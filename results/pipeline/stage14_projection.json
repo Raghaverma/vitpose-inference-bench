@@ -1,0 +1,172 @@
+{
+  "phase": "projection",
+  "checkpoint_tag": "upgrades-projection-20260929T044916",
+  "env": {
+    "gpu_name": "NVIDIA L4",
+    "tensorrt_version": "11.3.0.99",
+    "torch_version": "2.14.0+cu130",
+    "cuda_runtime": "13.0",
+    "transformers_version": "5.17.0",
+    "ultralytics_version": "8.4.155",
+    "opencv_version": "5.0.0",
+    "opencv_threads": 1,
+    "cpu_count": 16,
+    "cpu_model": "AMD EPYC 7R13 Processor",
+    "loadavg_at_start": [
+      2.00439453125,
+      4.11181640625,
+      4.26904296875
+    ],
+    "python": "3.12.3"
+  },
+  "method": "Stage 8 async pipeline, YOLO x4 per call; chunked + guarded units, variants interleaved per chunk",
+  "curves": {
+    "stage9": [
+      {
+        "max_persons": 1,
+        "crops_per_frame": 0.9970453053184505,
+        "fps": 178.7842472021431,
+        "latency_p95_ms": 379.9548645019531,
+        "cpu_cores_busy_total": 5.44570008385254
+      },
+      {
+        "max_persons": 2,
+        "crops_per_frame": 1.9806303348653973,
+        "fps": 110.12950270159712,
+        "latency_p95_ms": 617.5949096679688,
+        "cpu_cores_busy_total": 5.001021934893274
+      },
+      {
+        "max_persons": 3,
+        "crops_per_frame": 2.85801050558109,
+        "fps": 82.20623013129328,
+        "latency_p95_ms": 822.4839477539062,
+        "cpu_cores_busy_total": 4.712689397743413
+      },
+      {
+        "max_persons": 4,
+        "crops_per_frame": 3.471930400525279,
+        "fps": 69.1125590530077,
+        "latency_p95_ms": 1058.1331787109375,
+        "cpu_cores_busy_total": 4.625050570375932
+      }
+    ],
+    "upgraded": [
+      {
+        "max_persons": 1,
+        "crops_per_frame": 0.9970453053184505,
+        "fps": 231.15714580503328,
+        "latency_p95_ms": 290.22161865234375,
+        "cpu_cores_busy_total": 3.691229012461201
+      },
+      {
+        "max_persons": 2,
+        "crops_per_frame": 1.9809586342744583,
+        "fps": 127.51356498049698,
+        "latency_p95_ms": 517.9056396484375,
+        "cpu_cores_busy_total": 2.846658706064936
+      },
+      {
+        "max_persons": 3,
+        "crops_per_frame": 2.858338804990151,
+        "fps": 90.96892663967172,
+        "latency_p95_ms": 745.2089233398438,
+        "cpu_cores_busy_total": 2.350976331278712
+      },
+      {
+        "max_persons": 4,
+        "crops_per_frame": 3.4729152987524623,
+        "fps": 75.69280367290976,
+        "latency_p95_ms": 973.7944946289062,
+        "cpu_cores_busy_total": 2.13510364135798
+      }
+    ],
+    "upgraded+hybrid": [
+      {
+        "max_persons": 1,
+        "crops_per_frame": 0.9970453053184505,
+        "fps": 315.9612582874223,
+        "latency_p95_ms": 203.87896728515625,
+        "cpu_cores_busy_total": 4.058950767165737
+      },
+      {
+        "max_persons": 2,
+        "crops_per_frame": 1.9809586342744583,
+        "fps": 195.24990516773374,
+        "latency_p95_ms": 393.50152587890625,
+        "cpu_cores_busy_total": 3.3857846326197296
+      },
+      {
+        "max_persons": 3,
+        "crops_per_frame": 2.858338804990151,
+        "fps": 128.81383772716322,
+        "latency_p95_ms": 582.5175170898438,
+        "cpu_cores_busy_total": 2.7154092319307788
+      },
+      {
+        "max_persons": 4,
+        "crops_per_frame": 3.4729152987524623,
+        "fps": 101.3611296380936,
+        "latency_p95_ms": 784.8817749023438,
+        "cpu_cores_busy_total": 2.475627458774121
+      }
+    ]
+  },
+  "fleet": {
+    "stage9": {
+      "fps_720p_projected": 87.89477132132629,
+      "frames_720p": 84791.0,
+      "videos_720p_extrapolated": 10,
+      "fps_other_resolutions_measured": 87.58625177499306,
+      "frames_other": 46222,
+      "fps_fleet": 87.7856763470737,
+      "hours_per_1m_frames": 3.164272229099678
+    },
+    "upgraded": {
+      "fps_720p_projected": 98.53926986267271,
+      "frames_720p": 84791.0,
+      "videos_720p_extrapolated": 10,
+      "fps_other_resolutions_measured": 96.44219320705477,
+      "frames_other": 46222,
+      "fps_fleet": 97.78907873412798,
+      "hours_per_1m_frames": 2.8405807823694578
+    },
+    "upgraded+hybrid": {
+      "fps_720p_projected": 137.45868333714452,
+      "frames_720p": 84791.0,
+      "videos_720p_extrapolated": 10,
+      "fps_other_resolutions_measured": 135.2982400585406,
+      "frames_other": 46222,
+      "fps_fleet": 136.68863591296042,
+      "hours_per_1m_frames": 2.0321936488901615
+    }
+  },
+  "configs": [
+    {
+      "label": "stage9",
+      "backend": "trt-fp16",
+      "micro_batch": 4,
+      "codec": "hf",
+      "detector": "pt32",
+      "max_persons": 4
+    },
+    {
+      "label": "upgraded",
+      "backend": "trt-fp16",
+      "micro_batch": 4,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4
+    },
+    {
+      "label": "upgraded+hybrid",
+      "backend": "trt-hybrid",
+      "micro_batch": 8,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "hybrid_threshold_px": 64.0
+    }
+  ],
+  "created_utc": "2026-09-29T05:05:34.819459+00:00"
+}

@@ -70,14 +70,95 @@ def load_processor():
 
 # ---- detect -------------------------------------------------------------------------------------
 
-def load_detector():
+DETECTORS = ("pt32", "pt16", "trt16")
+
+
+class TrtYolo:
+    """Stage 12's YOLOv8s TensorRT FP16 engine (conversion/build_yolo_engine.py) as a drop-in
+    for the ultralytics predictor's network call: letterboxed (B, 3, H, W) 0-1 RGB in, the raw
+    (B, 84, anchors) fp32 predictions out, enqueued on the current CUDA stream. Letterbox and
+    NMS stay the predictor's own."""
+
+    META = REPO_ROOT / "results" / "tensorrt" / "yolo_engine_metadata.json"
+
+    def __init__(self):
+        from backends.tensorrt import load_engine
+        from conversion.build_engine import sha256_file
+
+        meta = json.loads(self.META.read_text())
+        path = REPO_ROOT / meta["engine_path"]
+        if sha256_file(path) != meta["engine_sha256"]:
+            raise SystemExit(f"[pipeline] {path} does not match {self.META}: rebuild with "
+                             f"python -m conversion.build_yolo_engine")
+        self.engine = load_engine(path)
+        self.context = self.engine.create_execution_context()
+        self.sha256 = meta["engine_sha256"]
+        self.profile = meta["profile"]
+        self.outputs: dict[tuple, torch.Tensor] = {}
+
+    def fit_profile(self, im: torch.Tensor) -> torch.Tensor:
+        """Pad a letterboxed input whose short side is under the profile's minimum (images wider
+        or taller than ~2:1, e.g. some COCO panoramas; no job video) up to that minimum,
+        symmetrically and with the letterbox's own grey (114). The letterbox pads by multiples of
+        32, split evenly, so ultralytics' scale_boxes, which assumes centered padding, maps boxes
+        back unchanged. Without this the engine ran with a stale input shape."""
+        _, _, h, w = im.shape
+        mh, mw = self.profile["min"][2], self.profile["min"][3]
+        if h >= mh and w >= mw:
+            return im
+        ph, pw = max(0, mh - h), max(0, mw - w)
+        return torch.nn.functional.pad(im, (pw // 2, pw - pw // 2, ph // 2, ph - ph // 2), value=114 / 255)
+
+    def __call__(self, im: torch.Tensor) -> torch.Tensor:
+        im = self.fit_profile(im).half().contiguous()
+        b, _, h, w = im.shape
+        anchors = sum((h // s) * (w // s) for s in (8, 16, 32))
+        out = self.outputs.get((b, h, w))
+        if out is None:
+            out = self.outputs[(b, h, w)] = torch.empty((b, 84, anchors), dtype=torch.float32, device="cuda")
+        ctx = self.context
+        if not ctx.set_input_shape("images", (b, 3, h, w)):
+            raise ValueError(f"[pipeline] YOLO engine profile {self.profile} can't take input {(b, 3, h, w)}")
+        ctx.set_tensor_address("images", im.data_ptr())
+        ctx.set_tensor_address("output0", out.data_ptr())
+        if not ctx.execute_async_v3(torch.cuda.current_stream().cuda_stream):
+            raise RuntimeError("[pipeline] YOLO execute_async_v3 failed")
+        return out
+
+
+def load_detector(variant: str = "pt32"):
+    """YOLOv8s, person class, conf 0.35, as in Stages 0-9, in one of Stage 12's variants:
+    pt32 -- PyTorch fp32 (Stages 0-9); pt16 -- PyTorch fp16 with the head's box decoding kept
+    fp32 (conversion.build_yolo_engine.fp32_head_tail); trt16 -- the TensorRT engine built from
+    that same mixed-precision graph. The trt16 detector keeps a PyTorch predictor for letterbox
+    and NMS; only detect_frames() runs the engine."""
     from ultralytics import YOLO
-    return YOLO(str(DEFAULT_DETECTOR))
+
+    if variant not in DETECTORS:
+        raise ValueError(f"unknown detector {variant!r}; expected one of {DETECTORS}")
+    det = YOLO(str(DEFAULT_DETECTOR))
+    det.pipeline_variant = variant
+    det.pipeline_kwargs = {"quantize": 16} if variant == "pt16" else {}
+    det.trt = None
+    if variant != "pt32":
+        # Build the predictor (letterbox + NMS, and for pt16 the fp16 network) on a blank frame.
+        detect(det, np.zeros((720, 1280, 3), np.uint8))
+        if variant == "pt16":
+            from conversion.build_yolo_engine import fp32_head_tail
+            fp32_head_tail(det.predictor.model.model)
+        else:
+            det.trt = TrtYolo()
+    return det
 
 
 def detect(detector, frame_bgr: np.ndarray, max_persons: int = MAX_PERSONS) -> tuple[np.ndarray, int, dict]:
-    """(xywh boxes, persons detected before the cap, ultralytics' own pre/infer/post ms)."""
-    result = detector(frame_bgr, verbose=False, conf=DET_CONF, classes=[0], device="cuda")[0]
+    """(xywh boxes, persons detected before the cap, ultralytics' own pre/infer/post ms). With the
+    trt16 detector this goes through detect_frames(), and the timings are not reported."""
+    if getattr(detector, "trt", None) is not None:
+        (boxes, n_det), = detect_frames(detector, [frame_bgr], max_persons)
+        return boxes, n_det, {"preprocess": float("nan"), "inference": float("nan"), "postprocess": float("nan")}
+    result = detector(frame_bgr, verbose=False, conf=DET_CONF, classes=[0], device="cuda",
+                      **getattr(detector, "pipeline_kwargs", {}))[0]
     xyxy = result.boxes.xyxy.cpu().numpy()
     return select_persons(xyxy, max_persons), len(xyxy), dict(result.speed)
 
@@ -91,19 +172,24 @@ def detect_frames(detector, frames: list[np.ndarray], max_persons: int = MAX_PER
     stream_inference runs, so the same letterbox, model and NMS), whose only syncs are the
     current-stream ones their data flow needs. detect() must have run once first, to build the
     predictor with this pipeline's arguments; pipeline/async_pipeline.py checks the boxes against
-    Stage 7's, which came from detect(), bit for bit."""
+    Stage 7's, which came from detect(), bit for bit. With Stage 12's trt16 detector, the
+    network call is the TensorRT engine's (TrtYolo), between the same preprocess and NMS."""
+    return [(select_persons(xyxy, max_persons), len(xyxy)) for xyxy, _ in detect_frames_raw(detector, frames)]
+
+
+@torch.inference_mode()
+def detect_frames_raw(detector, frames: list[np.ndarray]) -> list[tuple[np.ndarray, np.ndarray]]:
+    """detect_frames() before person selection: per frame, every person box (xyxy) and its
+    confidence, in the detector's own order."""
     p = detector.predictor
     if p is None or p.args.conf != DET_CONF or list(p.args.classes) != [0]:
         raise RuntimeError("call stages.detect() once before detect_frames() to set up the predictor")
+    trt_net = getattr(detector, "trt", None)
     with p._lock:
         p.batch = ([""] * len(frames), frames, [""] * len(frames))
         im = p.preprocess(frames)
-        results = p.postprocess(p.inference(im), im, frames)
-    out = []
-    for r in results:
-        xyxy = r.boxes.xyxy.cpu().numpy()
-        out.append((select_persons(xyxy, max_persons), len(xyxy)))
-    return out
+        results = p.postprocess(p.inference(im) if trt_net is None else trt_net(im), im, frames)
+    return [(r.boxes.xyxy.cpu().numpy(), r.boxes.conf.cpu().numpy()) for r in results]
 
 
 # ---- pose backends ------------------------------------------------------------------------------

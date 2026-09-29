@@ -12,6 +12,9 @@ Frames, crops and heatmaps never go through a pipe: they live in a shared-memory
 (frame index, slot, boxes) and the small keypoint arrays. This module imports only numpy, cv2,
 torch (CPU) and transformers -- never TensorRT, ultralytics or the pose model -- so a spawned
 worker starts in a couple of seconds and a few hundred MB.
+
+Stage 11 adds a second codec for both workers, "cv2": cv2.warpAffine for the crop warp and the
+batched torch DARK decode of pipeline/fast_codec.py, in place of HF's per-crop scipy code.
 """
 from __future__ import annotations
 
@@ -24,6 +27,7 @@ import cv2
 import numpy as np
 import torch
 
+from pipeline import fast_codec
 from pipeline.cpu_stages import HEATMAP_SHAPE, MAX_PERSONS, POSE_INPUT, load_processor, postprocess, preprocess
 
 
@@ -67,18 +71,20 @@ def _setup(checkpoint: str):
     return load_processor(checkpoint)
 
 
-def preprocess_worker(checkpoint: str, ring_spec: tuple, task_q, done_q) -> None:
+def preprocess_worker(checkpoint: str, ring_spec: tuple, task_q, done_q, codec: str = "hf") -> None:
     """task: (frame_idx, slot, boxes) -> crops written to ring.crops[slot, :n];
-    reply ("crops", frame_idx, slot, n, busy_s)."""
+    reply ("crops", frame_idx, slot, n, busy_s). codec "hf": HF's crop warp (Stages 7-9);
+    "cv2": Stage 11's cv2.warpAffine (pipeline/fast_codec.warp_cv2)."""
     processor = _setup(checkpoint)
     ring = SharedRing(*ring_spec[:2], names=ring_spec[2])
+    warp = (lambda frame, boxes: preprocess(processor, frame, boxes)) if codec == "hf" else fast_codec.warp_cv2
     done_q.put(("ready", "preprocess", os.getpid()))
     try:
         while (task := task_q.get()) is not None:
             idx, slot, boxes = task
             t0 = time.perf_counter()
             try:
-                ring.crops[slot, :len(boxes)] = preprocess(processor, ring.frames[slot], boxes)
+                ring.crops[slot, :len(boxes)] = warp(ring.frames[slot], boxes)
             except Exception:
                 # Report instead of dying silently: the main process fails the run on it.
                 done_q.put(("error", idx, traceback.format_exc()))
@@ -88,18 +94,25 @@ def preprocess_worker(checkpoint: str, ring_spec: tuple, task_q, done_q) -> None
         ring.close()
 
 
-def postprocess_worker(checkpoint: str, ring_spec: tuple, task_q, done_q) -> None:
+def _decode_vectorized(heatmaps: np.ndarray, boxes: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    kp, sc = fast_codec.decode(torch.from_numpy(heatmaps), *fast_codec.center_scale(boxes))
+    return kp.numpy(), sc.numpy()
+
+
+def postprocess_worker(checkpoint: str, ring_spec: tuple, task_q, done_q, codec: str = "hf") -> None:
     """task: (frame_idx, slot, boxes) with heatmaps in ring.heatmaps[slot, :n];
-    reply ("pose", frame_idx, slot, keypoints, scores, busy_s)."""
+    reply ("pose", frame_idx, slot, keypoints, scores, busy_s). codec "hf": HF's DARK decode;
+    "cv2": Stage 11's batched torch decode (pipeline/fast_codec.decode), on this CPU core."""
     processor = _setup(checkpoint)
     ring = SharedRing(*ring_spec[:2], names=ring_spec[2])
+    decode = (lambda hm, boxes: postprocess(processor, hm, boxes)) if codec == "hf" else _decode_vectorized
     done_q.put(("ready", "postprocess", os.getpid()))
     try:
         while (task := task_q.get()) is not None:
             idx, slot, boxes = task
             t0 = time.perf_counter()
             try:
-                kp, sc = postprocess(processor, np.array(ring.heatmaps[slot, :len(boxes)]), boxes)
+                kp, sc = decode(np.array(ring.heatmaps[slot, :len(boxes)]), boxes)
             except Exception:
                 done_q.put(("error", idx, traceback.format_exc()))
                 continue

@@ -84,19 +84,19 @@ def engine_vram_mb(backend: str, sizes: tuple[int, ...]) -> float | None:
 MAX_EXTRAPOLATION = 0.5   # crops/frame past the top of the measured curve
 
 
-def interpolate_fps(curve: list[dict], crops_per_frame: float) -> dict:
+def interpolate_fps(curve: list[dict], crops_per_frame: float, max_extrapolation: float = MAX_EXTRAPOLATION) -> dict:
     """curve: [{crops_per_frame, fps}] measured at several person caps. Linear in time per frame
-    between the two nearest measured points. Up to MAX_EXTRAPOLATION above the measured range,
+    between the two nearest measured points. Up to max_extrapolation above the measured range,
     a least-squares line through the top three points, flagged; anything else is refused."""
     pts = sorted((p["crops_per_frame"], 1.0 / p["fps"]) for p in curve)
     xs, ts = zip(*pts)
     if xs[0] <= crops_per_frame <= xs[-1]:
         return {"fps": float(1.0 / np.interp(crops_per_frame, xs, ts)), "extrapolated": False}
-    if xs[-1] < crops_per_frame <= xs[-1] + MAX_EXTRAPOLATION and len(xs) >= 3:
+    if xs[-1] < crops_per_frame <= xs[-1] + max_extrapolation and len(xs) >= 3:
         slope, icpt = np.polyfit(xs[-3:], ts[-3:], 1)
         return {"fps": float(1.0 / (icpt + slope * crops_per_frame)), "extrapolated": True}
     return {"fps": None, "note": f"{crops_per_frame:.2f} crops/frame is outside the measured "
-                                 f"{xs[0]:.2f}-{xs[-1]:.2f} (+{MAX_EXTRAPOLATION})"}
+                                 f"{xs[0]:.2f}-{xs[-1]:.2f} (+{max_extrapolation:.2f})"}
 
 
 def parse_args() -> argparse.Namespace:

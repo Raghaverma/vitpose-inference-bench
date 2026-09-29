@@ -64,12 +64,14 @@ import numpy as np
 import torch
 
 from baseline import REPO_ROOT, resolve_checkpoint
-from pipeline import compare, cpu_workers, runner, stages
+from pipeline import compare, cpu_workers, fast_codec, gpu_guard, runner, stages
 from pipeline.sync_pipeline import FrameLog, env_fingerprint, merge_logs, repo_relative, run_pass
 
 ENGINE_SIZES = (1, 2, 4, 8, 16)
 N_BUFFERS = 2
 STALL_S = 300.0     # no frame finishing for this long means a stage is stuck: fail, don't hang
+CODECS = ("hf", "cv2", "gpu")
+POSE_BACKENDS = (*stages.BACKENDS, "trt-hybrid")
 
 
 @dataclass
@@ -81,23 +83,33 @@ class AsyncConfig:
     ring_slots: int = 64              # frames in flight
     max_persons: int = stages.MAX_PERSONS   # Stage 9 lowers it to vary crops per frame
     det_batch: int = 1                # frames per YOLO call; > 1 moves boxes by ~0.1 px (not bit-exact)
+    codec: str = "hf"                 # Stage 11: crop warp + pose decode -- "hf" (HF, in worker
+                                      # processes), "cv2" (cv2 + batched torch decode, in worker
+                                      # processes) or "gpu" (both on the GPU, no workers)
+    detector: str = "pt32"            # Stage 12: "pt32" (Stages 0-9), "pt16" or "trt16"
+    hybrid_threshold_px: float = 64.0 # Stage 13, trt-hybrid only: crops under this height go to FP16
 
 
 class CpuPools:
     """The preprocess + postprocess worker processes and the shared ring they read, started once
-    and reused across videos and backends (they're backend-independent)."""
+    and reused across videos and backends (they're backend-independent). One pool per codec
+    that runs on the CPU ("hf" or "cv2") and per frame shape."""
 
     def __init__(self, cfg: AsyncConfig, frame_shape: tuple[int, int, int]):
+        if cfg.codec not in ("hf", "cv2"):
+            raise ValueError(f"CpuPools is for the CPU codecs, not {cfg.codec!r}")
         self.ctx = mp.get_context("spawn")
         self.ring = cpu_workers.SharedRing(cfg.ring_slots, frame_shape)
         spec, ckpt = self.ring.spec(), resolve_checkpoint(None)
         self.pre_q, self.pre_done_q = self.ctx.Queue(), self.ctx.Queue()
         self.post_q, self.post_done_q = self.ctx.Queue(), self.ctx.Queue()
         self.procs = (
-            [self.ctx.Process(target=cpu_workers.preprocess_worker, args=(ckpt, spec, self.pre_q, self.pre_done_q),
-                              daemon=True) for _ in range(cfg.preprocess_workers)] +
-            [self.ctx.Process(target=cpu_workers.postprocess_worker, args=(ckpt, spec, self.post_q, self.post_done_q),
-                              daemon=True) for _ in range(cfg.postprocess_workers)])
+            [self.ctx.Process(target=cpu_workers.preprocess_worker,
+                              args=(ckpt, spec, self.pre_q, self.pre_done_q, cfg.codec), daemon=True)
+             for _ in range(cfg.preprocess_workers)] +
+            [self.ctx.Process(target=cpu_workers.postprocess_worker,
+                              args=(ckpt, spec, self.post_q, self.post_done_q, cfg.codec), daemon=True)
+             for _ in range(cfg.postprocess_workers)])
         for p in self.procs:
             p.start()
         ready = collections.Counter()
@@ -106,6 +118,7 @@ class CpuPools:
         while ready["postprocess"] < cfg.postprocess_workers:
             ready[self.post_done_q.get(timeout=300)[1]] += 1
         self.cfg = cfg
+        self.codec = cfg.codec
 
     def close(self) -> None:
         for _ in range(self.cfg.preprocess_workers):
@@ -119,11 +132,33 @@ class CpuPools:
         self.ring.close()
 
 
+class GpuFrames:
+    """Stage 11's GPU codec: every frame in flight in pinned host memory and on the device. The
+    decode thread writes a frame to its host slot and enqueues the upload on the upload stream;
+    the batcher's crop warp waits for that slot's event. A slot's host buffer is rewritten only
+    after its previous upload finished (synchronized on first reuse)."""
+
+    def __init__(self, slots: int, shape: tuple[int, int, int], stream: torch.cuda.Stream):
+        self.shape = tuple(shape)
+        self.host = torch.empty((slots, *shape), dtype=torch.uint8).pin_memory()
+        self.host_np = self.host.numpy()
+        self.dev = torch.empty((slots, *shape), dtype=torch.uint8, device="cuda")
+        self.stream = stream
+        self.events = [torch.cuda.Event() for _ in range(slots)]
+
+    def upload(self, slot: int) -> None:
+        with torch.cuda.stream(self.stream):
+            self.dev[slot].copy_(self.host[slot], non_blocking=True)
+            self.events[slot].record(self.stream)
+
+
 class AsyncPose:
     """The GPU side of the pose stage for one backend: NBUF pinned host + device buffer sets of
-    micro_batch crops, a copy stream and a pose stream."""
+    micro_batch crops, a copy stream and a pose stream. With gpu_codec, also the crop geometry
+    and keypoint buffers of Stage 11's GPU codec (launch_gpu)."""
 
-    def __init__(self, backend, micro_batch: int, streams: tuple[torch.cuda.Stream, torch.cuda.Stream] | None = None):
+    def __init__(self, backend, micro_batch: int, streams: tuple[torch.cuda.Stream, torch.cuda.Stream] | None = None,
+                 gpu_codec: bool = False):
         self.be = backend
         self.is_trt = isinstance(backend, stages.TrtPose)
         if self.is_trt and micro_batch not in backend.engines:
@@ -134,7 +169,8 @@ class AsyncPose:
         # out streams round-robin from a pool of 32, so creating a pair per object would, past
         # 16 objects, give two of them the same "new" streams (see AsyncGpuState).
         self.copy_stream, self.pose_stream = streams or (torch.cuda.Stream(), torch.cuda.Stream())
-        mk = lambda shape, **kw: [torch.zeros((micro_batch, *shape), dtype=torch.float16, **kw) for _ in range(N_BUFFERS)]
+        mk = lambda shape, dtype=torch.float16, **kw: [torch.zeros((micro_batch, *shape), dtype=dtype, **kw)
+                                                       for _ in range(N_BUFFERS)]
         self.host_in = [t.pin_memory() for t in mk(stages.POSE_INPUT)]
         self.host_out = [t.pin_memory() for t in mk(stages.HEATMAP_SHAPE)]
         self.dev_in = mk(stages.POSE_INPUT, device="cuda")
@@ -142,11 +178,32 @@ class AsyncPose:
         self.dataset_index = torch.full((micro_batch,), stages.DATASET_INDEX, dtype=torch.int64, device="cuda")
         # One TensorRT execution context per (engine, buffer): two batches are in flight at once.
         self.contexts = backend.buffer_contexts(N_BUFFERS) if self.is_trt else {}
+        self.gpu_codec = gpu_codec
+        if gpu_codec:
+            self.cropper = fast_codec.GpuCropper()
+            k = stages.HEATMAP_SHAPE[0]
+            self.host_slots = [t.pin_memory() for t in mk((), torch.int64)]
+            self.host_maps = [t.pin_memory() for t in mk((4,), torch.float64)]
+            self.host_cs = [t.pin_memory() for t in mk((4,), torch.float32)]
+            self.dev_slots = mk((), torch.int64, device="cuda")
+            self.dev_maps = mk((4,), torch.float64, device="cuda")
+            self.dev_cs = mk((4,), torch.float32, device="cuda")
+            self.host_kp = [t.pin_memory() for t in mk((k, 2), torch.float32)]
+            self.host_sc = [t.pin_memory() for t in mk((k,), torch.float32)]
 
     def engine_batch(self, n: int) -> int:
         if not self.is_trt:
             return n
         return min(b for b in self.be.batch_sizes if b >= n)   # n <= micro_batch, which has an engine
+
+    def _forward(self, i: int, n: int, b: int) -> None:
+        """The forward on the pose stream, dev_in[i] -> dev_out[i]."""
+        if self.is_trt:
+            self.be.enqueue(b, self.dev_in[i][:b], self.dev_out[i][:b], self.pose_stream, self.contexts[b][i])
+        else:
+            with torch.cuda.stream(self.pose_stream), torch.inference_mode():
+                out = self.be.model(pixel_values=self.dev_in[i][:n], dataset_index=self.dataset_index[:n]).heatmaps
+                self.dev_out[i][:n].copy_(out)
 
     def launch(self, i: int, n: int) -> tuple[int, torch.cuda.Event, torch.cuda.Event]:
         """Crops are already in host_in[i][:n]. Enqueue H2D -> forward -> D2H; return the engine
@@ -160,43 +217,124 @@ class AsyncPose:
             h2d.record(self.copy_stream)
         self.pose_stream.wait_event(h2d)
         start.record(self.pose_stream)
-        if self.is_trt:
-            self.be.enqueue(b, self.dev_in[i][:b], self.dev_out[i][:b], self.pose_stream, self.contexts[b][i])
-        else:
-            with torch.cuda.stream(self.pose_stream), torch.inference_mode():
-                out = self.be.model(pixel_values=self.dev_in[i][:n], dataset_index=self.dataset_index[:n]).heatmaps
-                self.dev_out[i][:n].copy_(out)
+        self._forward(i, n, b)
         with torch.cuda.stream(self.pose_stream):
             self.host_out[i][:n].copy_(self.dev_out[i][:n], non_blocking=True)
         done.record(self.pose_stream)
         return b, start, done
 
+    def _warp_ops(self, i: int, frames: GpuFrames) -> None:
+        """Geometry H2D + crop warp of all micro_batch rows of buffer i (rows past the batch hold
+        copies of its first crop, see Run.batch_loop)."""
+        self.dev_slots[i].copy_(self.host_slots[i], non_blocking=True)
+        self.dev_maps[i].copy_(self.host_maps[i], non_blocking=True)
+        self.dev_cs[i].copy_(self.host_cs[i], non_blocking=True)
+        self.cropper.warp(frames.dev, self.dev_slots[i], self.dev_maps[i], out=self.dev_in[i])
+
+    def _decode_ops(self, i: int) -> None:
+        """Pose decode of all micro_batch rows of buffer i + D2H of keypoints and scores."""
+        kp, sc = fast_codec.decode(self.dev_out[i], self.dev_cs[i][:, :2], self.dev_cs[i][:, 2:])
+        self.host_kp[i].copy_(kp, non_blocking=True)
+        self.host_sc[i].copy_(sc, non_blocking=True)
+
+    def capture_graphs(self, frames: GpuFrames, stream: torch.cuda.Stream, pools: tuple) -> None:
+        """Record _warp_ops and _decode_ops of every buffer as CUDA graphs over this frame ring,
+        so a batch costs two graph launches instead of ~90 kernel launches from Python (whose
+        GIL time the detect thread, the pipeline's bottleneck, would otherwise share). Must run
+        while no pipeline thread is using the GPU. Graphs replay bit-identical work: same
+        kernels, same fixed shapes."""
+        self.graphs = {}
+        for i in range(N_BUFFERS):
+            self.host_slots[i].zero_()
+            self.host_maps[i].copy_(torch.tensor([1.0, 0.0, 1.0, 0.0], dtype=torch.float64))
+            self.host_cs[i].copy_(torch.tensor([96.0, 128.0, 1.2, 1.6]))
+            with torch.cuda.stream(stream):
+                self._warp_ops(i, frames)                         # warm-up (lazy inits) before capture
+                self._decode_ops(i)
+            stream.synchronize()
+            gw, gd = torch.cuda.CUDAGraph(), torch.cuda.CUDAGraph()
+            with torch.cuda.graph(gw, pool=pools[0], stream=stream, capture_error_mode="thread_local"):
+                self._warp_ops(i, frames)
+            with torch.cuda.graph(gd, pool=pools[1], stream=stream, capture_error_mode="thread_local"):
+                self._decode_ops(i)
+            self.graphs[i] = (gw, gd)
+        self.graph_frames = frames
+
+    def launch_gpu(self, i: int, n: int, frames: GpuFrames, slots: set[int]) -> tuple[int, torch.cuda.Event, torch.cuda.Event]:
+        """Stage 11's GPU codec. host_slots/maps/cs[i] hold each crop's frame slot, sample maps
+        and (center, scale), padded to micro_batch rows. On the copy stream: wait for those
+        frames' uploads, copy the geometry up, warp the crops into dev_in[i]. On the pose stream:
+        forward, decode, and copy only keypoints + scores back. Never blocks the host."""
+        if getattr(self, "graph_frames", None) is not frames:
+            raise RuntimeError("[stage11] capture_graphs() for this frame ring first")
+        b = self.engine_batch(n)
+        gw, gd = self.graphs[i]
+        warped, start, done = (torch.cuda.Event(enable_timing=t) for t in (False, True, True))
+        with torch.cuda.stream(self.copy_stream):
+            for s in slots:
+                self.copy_stream.wait_event(frames.events[s])
+            gw.replay()
+            if b > n:
+                self.dev_in[i][n:b].zero_()
+            warped.record(self.copy_stream)
+        self.pose_stream.wait_event(warped)
+        start.record(self.pose_stream)
+        self._forward(i, n, b)
+        with torch.cuda.stream(self.pose_stream):
+            gd.replay()
+        done.record(self.pose_stream)
+        return b, start, done
+
 
 class Run:
-    """One pass of the asynchronous pipeline over one video."""
+    """One pass of the asynchronous pipeline over one video.
 
-    def __init__(self, video: dict, detector, pools: CpuPools, pose: AsyncPose, cfg: AsyncConfig,
-                 max_frames: int | None, start: int = 0, det_stream: torch.cuda.Stream | None = None, cap=None):
-        self.video, self.detector, self.pools, self.pose, self.cfg = video, detector, pools, pose, cfg
+    `poses` is one AsyncPose per route: a single backend has one route; Stage 13's trt-hybrid
+    has two (FP16 for crops under cfg.hybrid_threshold_px, INT8 for the rest), batched
+    separately on the same streams. `pools` is the CPU worker pool of cfg.codec, or None with
+    the GPU codec, which takes `frames` instead."""
+
+    def __init__(self, video: dict, detector, pools: CpuPools | None, poses: "AsyncPose | list[AsyncPose]",
+                 cfg: AsyncConfig, max_frames: int | None, start: int = 0,
+                 det_stream: torch.cuda.Stream | None = None, cap=None, frames: GpuFrames | None = None):
+        self.poses = poses if isinstance(poses, list) else [poses]
+        self.pose = self.poses[0]
+        self.video, self.detector, self.pools, self.cfg = video, detector, pools, cfg
+        self.gpu_codec = cfg.codec == "gpu"
+        if self.gpu_codec:
+            if frames is None or not all(p.gpu_codec for p in self.poses):
+                raise ValueError("the GPU codec needs GpuFrames and AsyncPose(gpu_codec=True)")
+            self.frames = frames
+            self.frame_buf = frames.host_np
+            self.crop_q: queue.Queue = queue.Queue()
+        else:
+            if pools is None or pools.codec != cfg.codec:
+                raise ValueError(f"codec {cfg.codec!r} needs its own CpuPools")
+            self.ring = pools.ring
+            self.frame_buf = self.ring.frames
         self.max_frames = max_frames
         # A capture already positioned at `start` (runner.open_at, outside the measurement
         # window), or skip to it now, before run() starts the clock.
         self.cap = cap if cap is not None else runner.open_at(video, start)
-        self.ring = pools.ring
         self.free_slots: queue.Queue = queue.Queue()
         for s in range(cfg.ring_slots):
             self.free_slots.put(s)
         self.det_q: queue.Queue = queue.Queue()
         self.inflight: queue.Queue = queue.Queue()
-        self.buffers = threading.Semaphore(N_BUFFERS)
+        self.buffers = [threading.Semaphore(N_BUFFERS) for _ in self.poses]
         self.det_stream = det_stream or torch.cuda.Stream()
-        handles = {self.det_stream.cuda_stream, pose.copy_stream.cuda_stream, pose.pose_stream.cuda_stream}
-        if len(handles) != 3:
+        handles = {self.det_stream.cuda_stream, self.pose.copy_stream.cuda_stream, self.pose.pose_stream.cuda_stream}
+        if self.gpu_codec:
+            handles.add(frames.stream.cuda_stream)
+        if len(handles) != (4 if self.gpu_codec else 3):
             raise RuntimeError("[stage8] detect, copy and pose streams alias one another (PyTorch's pooled "
                                "streams wrapped around) -- detection would serialize with the pose path")
         self.lock = threading.Lock()
         self.results: dict[int, tuple] = {}
         self.boxes: dict[int, np.ndarray] = {}
+        self.routes: dict[int, np.ndarray] = {}
+        self.kp_acc: dict[int, np.ndarray] = {}
+        self.sc_acc: dict[int, np.ndarray] = {}
         self.remaining: dict[int, int] = {}
         self.t_decoded: dict[int, float] = {}
         self.t_done: dict[int, float] = {}
@@ -245,7 +383,11 @@ class Run:
             if not ok:
                 self.free_slots.put(slot)
                 break
-            self.ring.frames[slot] = frame
+            if self.gpu_codec:
+                self.frames.events[slot].synchronize()      # the slot's previous upload is done
+            self.frame_buf[slot] = frame
+            if self.gpu_codec:
+                self.frames.upload(slot)
             t1 = time.perf_counter()
             self.busy["decode"] += t1 - t0
             self.t_decoded[idx] = t1
@@ -262,6 +404,7 @@ class Run:
         """YOLO on up to det_batch frames per call: the first frame blocks, the rest are taken
         only if already decoded, so a batch never waits for the decoder."""
         expected, end = 0, False
+        hybrid = len(self.poses) > 1
         while not end and (item := self.det_q.get()) is not None:
             items = [item]
             while len(items) < self.cfg.det_batch:
@@ -275,7 +418,7 @@ class Run:
                 items.append(nxt)
             t0 = time.perf_counter()
             with torch.cuda.stream(self.det_stream):
-                dets = stages.detect_frames(self.detector, [self.ring.frames[slot] for _, slot in items],
+                dets = stages.detect_frames(self.detector, [self.frame_buf[slot] for _, slot in items],
                                             self.cfg.max_persons)
             self.busy["detect"] += time.perf_counter() - t0
             for (idx, slot), (boxes, n_det) in zip(items, dets):
@@ -285,17 +428,26 @@ class Run:
                     continue
                 self.results[idx] = (n_det,)
                 self.remaining[idx] = len(boxes)
+                if hybrid:      # route 0 (FP16) for small crops, 1 (INT8) for the rest
+                    self.routes[idx] = (fast_codec.crop_height_px(boxes) >= self.cfg.hybrid_threshold_px).astype(np.int8)
                 expected += len(boxes)
-                self.pools.pre_q.put((idx, slot, boxes))
-        self.pools.pre_done_q.put(("eof", expected))
+                if self.gpu_codec:
+                    self.kp_acc[idx] = np.empty((len(boxes), stages.HEATMAP_SHAPE[0], 2), np.float32)
+                    self.sc_acc[idx] = np.empty((len(boxes), stages.HEATMAP_SHAPE[0]), np.float32)
+                    self.crop_q.put(("boxes", idx, slot, len(boxes)))
+                else:
+                    self.pools.pre_q.put((idx, slot, boxes))
+        (self.crop_q if self.gpu_codec else self.pools.pre_done_q).put(("eof", expected))
 
     def batch_loop(self) -> None:
-        """Pack crops across frames into micro-batches and launch them."""
-        pending: collections.deque = collections.deque()    # (idx, slot, person)
-        state = {"received": 0, "expected": None, "deadline": None}
+        """Pack crops across frames into micro-batches, per route, and launch them."""
+        n_routes = len(self.poses)
+        pending = [collections.deque() for _ in range(n_routes)]    # (idx, slot, person)
+        deadline = [0.0] * n_routes
+        state = {"received": 0, "expected": None}
         timeout = self.cfg.batch_timeout_ms / 1000
-        mb = self.pose.mb
-        buf = 0
+        bufs = [0] * n_routes
+        source = self.crop_q if self.gpu_codec else self.pools.pre_done_q
 
         def take(msg) -> None:
             if msg[0] == "error":
@@ -303,68 +455,107 @@ class Run:
             if msg[0] == "eof":
                 state["expected"] = msg[1]
                 return
-            _, idx, slot, n, busy = msg
-            self.busy["preprocess"] += busy
-            if not pending:
-                state["deadline"] = time.perf_counter() + timeout
-            pending.extend((idx, slot, p) for p in range(n))
+            if msg[0] == "crops":
+                _, idx, slot, n, busy = msg
+                self.busy["preprocess"] += busy
+            else:                                                   # ("boxes", ...): GPU codec
+                _, idx, slot, n = msg
+            route = self.routes.get(idx)
+            for p in range(n):
+                r = 0 if route is None else int(route[p])
+                if not pending[r]:
+                    deadline[r] = time.perf_counter() + timeout
+                pending[r].append((idx, slot, p))
             state["received"] += n
 
         while True:
             exhausted = state["expected"] is not None and state["received"] == state["expected"]
-            if not pending and exhausted:
+            if exhausted and not any(pending):
                 break
-            due = pending and (len(pending) >= mb or exhausted or time.perf_counter() >= state["deadline"])
+            now = time.perf_counter()
+            due = [r for r in range(n_routes) if pending[r] and
+                   (len(pending[r]) >= self.poses[r].mb or exhausted or now >= deadline[r])]
             if not due:
-                wait = 1.0 if not pending else max(0.0, state["deadline"] - time.perf_counter())
+                waits = [deadline[r] - now for r in range(n_routes) if pending[r]]
                 try:
-                    take(self.pools.pre_done_q.get(timeout=wait))
+                    take(source.get(timeout=max(0.0, min(waits)) if waits else 1.0))
                 except queue.Empty:
                     pass
                 continue
+            r = due[0]
+            pose, mb = self.poses[r], self.poses[r].mb
             # A batch is due. Wait for a free buffer set BEFORE deciding what goes in it: crops
             # that arrive while the GPU is still busy with the previous two batches then fill
             # this one instead of it launching half-empty and padded.
-            self.buffers.acquire()
-            while len(pending) < mb:
+            self.buffers[r].acquire()
+            while len(pending[r]) < mb:
                 try:
-                    take(self.pools.pre_done_q.get_nowait())
+                    take(source.get_nowait())
                 except queue.Empty:
                     break
-            items = [pending.popleft() for _ in range(min(mb, len(pending)))]
-            if pending:
-                state["deadline"] = time.perf_counter() + timeout
+            items = [pending[r].popleft() for _ in range(min(mb, len(pending[r])))]
+            if pending[r]:
+                deadline[r] = time.perf_counter() + timeout
             t0 = time.perf_counter()
-            host = self.pose.host_in[buf].numpy()
-            for j, (idx, slot, p) in enumerate(items):
-                host[j] = self.ring.crops[slot, p]
-            b, start, done = self.pose.launch(buf, len(items))
+            buf = bufs[r]
+            if self.gpu_codec:
+                # All micro_batch rows go through the (fixed-shape) graphs: rows past the batch
+                # repeat its first crop, so every gather stays in bounds; their outputs are unused.
+                rows = items + [items[0]] * (mb - len(items))
+                boxes = np.stack([self.boxes[idx][p] for idx, _, p in rows])
+                center, scale = fast_codec.center_scale(boxes)
+                pose.host_slots[buf].numpy()[:] = [slot for _, slot, _ in rows]
+                pose.host_maps[buf].numpy()[:] = fast_codec.sample_maps(center, scale)
+                pose.host_cs[buf].numpy()[:] = np.concatenate([center, scale], axis=1)
+                b, start, done = pose.launch_gpu(buf, len(items), self.frames, {slot for _, slot, _ in items})
+            else:
+                host = pose.host_in[buf].numpy()
+                for j, (idx, slot, p) in enumerate(items):
+                    host[j] = self.ring.crops[slot, p]
+                b, start, done = pose.launch(buf, len(items))
             self.busy["batcher"] += time.perf_counter() - t0
-            self.inflight.put((items, buf, b, start, done))
-            buf = (buf + 1) % N_BUFFERS
+            self.inflight.put((r, items, buf, b, start, done))
+            bufs[r] = (buf + 1) % N_BUFFERS
         self.inflight.put(None)
 
     def complete_loop(self) -> None:
-        """Wait for each launched batch in order, scatter its heatmaps back to the frames' slots,
-        and hand every frame whose crops are all back to the postprocess workers."""
+        """Wait for each launched batch in order and scatter its outputs back to the frames: HF
+        and cv2 codecs, heatmaps into the ring, and every frame whose crops are all back goes to
+        the postprocess workers; GPU codec, keypoints, and such a frame is finished here."""
         while (item := self.inflight.get()) is not None:
-            items, buf, b, start, done = item
+            r, items, buf, b, start, done = item
+            pose = self.poses[r]
             done.synchronize()
             t0 = time.perf_counter()
-            out = self.pose.host_out[buf].numpy()
             ready = []
-            for j, (idx, slot, p) in enumerate(items):
-                self.ring.heatmaps[slot, p] = out[j]
-                self.remaining[idx] -= 1
-                if self.remaining[idx] == 0:
-                    ready.append((idx, slot))
-            self.buffers.release()
-            for idx, slot in ready:
-                self.pools.post_q.put((idx, slot, self.boxes[idx]))
+            if self.gpu_codec:
+                kp, sc = pose.host_kp[buf].numpy(), pose.host_sc[buf].numpy()
+                for j, (idx, slot, p) in enumerate(items):
+                    self.kp_acc[idx][p] = kp[j]
+                    self.sc_acc[idx][p] = sc[j]
+                    self.remaining[idx] -= 1
+                    if self.remaining[idx] == 0:
+                        ready.append((idx, slot))
+                self.buffers[r].release()
+                for idx, slot in ready:
+                    self._finish_frame(idx, slot, (self.results[idx][0], self.boxes[idx],
+                                                   self.kp_acc.pop(idx), self.sc_acc.pop(idx)))
+            else:
+                out = pose.host_out[buf].numpy()
+                for j, (idx, slot, p) in enumerate(items):
+                    self.ring.heatmaps[slot, p] = out[j]
+                    self.remaining[idx] -= 1
+                    if self.remaining[idx] == 0:
+                        ready.append((idx, slot))
+                self.buffers[r].release()
+                for idx, slot in ready:
+                    self.pools.post_q.put((idx, slot, self.boxes[idx]))
             self.busy["completer"] += time.perf_counter() - t0
-            self.batches.append({"crops": len(items), "engine_batch": b, "gpu_ms": start.elapsed_time(done)})
+            self.batches.append({"route": r, "crops": len(items), "engine_batch": b, "gpu_ms": start.elapsed_time(done)})
 
     def collect_loop(self) -> None:
+        if self.gpu_codec:
+            return                                                  # frames finish in complete_loop
         while not self.finished.is_set():
             try:
                 msg = self.pools.post_done_q.get(timeout=0.2)
@@ -377,25 +568,31 @@ class Run:
             self._finish_frame(idx, slot, (self.results[idx][0], self.boxes[idx], kp, sc))
 
     def sample_loop(self) -> None:
-        q = self.pools
         while not self.finished.wait(0.1):
-            self.qdepth.append({"det_q": self.det_q.qsize(), "pre_q": q.pre_q.qsize(),
-                                "pre_done_q": q.pre_done_q.qsize(), "post_q": q.post_q.qsize(),
-                                "free_slots": self.free_slots.qsize()})
+            d = {"det_q": self.det_q.qsize(), "free_slots": self.free_slots.qsize()}
+            if self.gpu_codec:
+                d["crop_q"] = self.crop_q.qsize()
+            else:
+                q = self.pools
+                d.update({"pre_q": q.pre_q.qsize(), "pre_done_q": q.pre_done_q.qsize(), "post_q": q.post_q.qsize()})
+            self.qdepth.append(d)
 
     # -- run ------------------------------------------------------------------------------------
     def run(self) -> tuple[FrameLog, dict]:
         loops = [self.decode_loop, self.detect_loop, self.batch_loop, self.complete_loop,
                  self.collect_loop, self.sample_loop]
         threads = [threading.Thread(target=self._guard(f), name=f.__name__, daemon=True) for f in loops]
+        procs = self.pools.procs if self.pools is not None else []
+        own_pids = {os.getpid()} | {p.pid for p in procs}
         ru0 = resource.getrusage(resource.RUSAGE_SELF)
+        ticks0 = gpu_guard._process_ticks(own_pids)
         t_start = time.perf_counter()
         for t in threads:
             t.start()
         last_done, last_progress = -1, time.perf_counter()
         while not self.finished.wait(1.0):
             # A worker process that died (OOM kill, crash) would leave this run waiting forever.
-            if dead := [p.pid for p in self.pools.procs if not p.is_alive()]:
+            if dead := [p.pid for p in procs if not p.is_alive()]:
                 self.errors.append(RuntimeError(f"worker process(es) {dead} died"))
                 break
             if self.done_frames != last_done:
@@ -405,6 +602,7 @@ class Run:
                 break
         wall_s = time.perf_counter() - t_start
         ru1 = resource.getrusage(resource.RUSAGE_SELF)
+        ticks1 = gpu_guard._process_ticks(own_pids)
         if self.errors:
             raise RuntimeError(f"[stage8] pipeline thread failed: {self.errors[0]!r}") from self.errors[0]
         for t in threads:
@@ -447,6 +645,9 @@ class Run:
             "queue_depth_mean": {k: float(np.mean([d[k] for d in self.qdepth])) for k in self.qdepth[0]}
                                 if self.qdepth else {},
             "main_process_cpu_cores_busy": ((ru1.ru_utime - ru0.ru_utime) + (ru1.ru_stime - ru0.ru_stime)) / wall_s,
+            # Every process of the pipeline: the main one plus its CPU workers (Stage 11).
+            "cpu_cores_busy_total": (ticks1 - ticks0) / gpu_guard.HZ / wall_s,
+            "crops_per_route": [sum(bt["crops"] for bt in self.batches if bt["route"] == r) for r in range(len(self.poses))],
         }
         return log, stats
 
@@ -483,6 +684,9 @@ def aggregate(chunks: list[dict], cfg: AsyncConfig) -> dict:
         "gpu_util_mean_pct": wmean(lambda c: c["gpu"]["gpu_util_mean_pct"]),
         "sm_clock_mean_mhz": wmean(lambda c: c["gpu"]["sm_clock_mean_mhz"]),
         "main_process_cpu_cores_busy": wmean(lambda c: c["main_process_cpu_cores_busy"]),
+        "cpu_cores_busy_total": wmean(lambda c: c.get("cpu_cores_busy_total", float("nan"))),
+        "crops_per_route": [sum(c.get("crops_per_route", [c["crops"]])[r] for c in chunks)
+                            for r in range(len(chunks[0].get("crops_per_route", [0])))],
         "queue_depth_mean": {k: wmean(lambda c: c["queue_depth_mean"].get(k, 0.0)) for k in chunks[0]["queue_depth_mean"]},
         "contaminated_attempts_discarded": sum(len(c["contaminated_attempts"]) for c in chunks),
     }
@@ -517,40 +721,94 @@ def parse_args() -> argparse.Namespace:
 
 
 class AsyncGpuState(runner.GpuResources):
-    """Everything Stages 8-9 hold on the GPU: the detector, each backend's engines/model and an
-    AsyncPose per (backend, micro-batch). Released while a prod job runs (pipeline/runner.py)."""
+    """Everything Stages 8-14 hold on the GPU: the detector(s), each backend's engines/model, the
+    AsyncPose route(s) per (backend, micro-batch) and, for the GPU codec, a device frame ring per
+    frame shape. Released while a prod job runs (pipeline/runner.py)."""
 
-    def __init__(self, names: list[str], micro_batches: list[int], first_frame: np.ndarray):
+    def __init__(self, names: list[str], micro_batches: list[int], first_frame: np.ndarray,
+                 detectors: tuple[str, ...] = ("pt32",), gpu_codec: bool = False):
         self.names, self.micro_batches, self.first_frame = names, micro_batches, first_frame
+        self.detector_variants, self.gpu_codec = tuple(detectors), gpu_codec
 
     def load(self) -> None:
-        # One detect, one copy and one pose stream for every configuration: only one runs at a
-        # time, and PyTorch's streams come from a round-robin pool of 32, so a fresh stream per
-        # Run or per AsyncPose eventually aliases one already in use (detection then silently
-        # serializes with the pose path). Run() asserts the three are distinct.
-        self.det_stream, copy_stream, pose_stream = (torch.cuda.Stream() for _ in range(3))
-        self.detector = stages.load_detector()
-        for _ in range(5):
-            stages.detect(self.detector, self.first_frame)          # builds the predictor detect_frames() reuses
-            stages.detect_frames(self.detector, [self.first_frame] * 4)
+        # One detect, one copy, one pose and one upload stream for every configuration: only one
+        # runs at a time, and PyTorch's streams come from a round-robin pool of 32, so a fresh
+        # stream per Run or per AsyncPose eventually aliases one already in use (detection then
+        # silently serializes with the pose path). Run() asserts they are distinct.
+        self.det_stream, copy_stream, pose_stream, self.upload_stream, self.capture_stream = (
+            torch.cuda.Stream() for _ in range(5))
+        self.detectors = {}
+        for variant in self.detector_variants:
+            det = stages.load_detector(variant)
+            for _ in range(5):
+                stages.detect(det, self.first_frame)                # builds the predictor detect_frames() reuses
+                stages.detect_frames(det, [self.first_frame] * 4)
+            self.detectors[variant] = det
+        self.detector = self.detectors.get("pt32", next(iter(self.detectors.values())))
         sizes = tuple(b for b in ENGINE_SIZES if b <= max(max(self.micro_batches), stages.MAX_PERSONS))
-        self.backends = {name: stages.load_backend(name, sizes) for name in self.names}
-        self.poses = {(name, b): AsyncPose(be, b, (copy_stream, pose_stream))
-                      for name, be in self.backends.items() for b in self.micro_batches}
+        needed = []
+        for name in self.names:
+            for n in (("trt-fp16", "trt-int8") if name == "trt-hybrid" else (name,)):
+                if n not in needed:
+                    needed.append(n)
+        self.backends = {name: stages.load_backend(name, sizes) for name in needed}
+        mk = lambda be, b: AsyncPose(be, b, (copy_stream, pose_stream), self.gpu_codec)
+        self.poses = {}
+        for name in self.names:
+            for b in self.micro_batches:
+                self.poses[(name, b)] = ([mk(self.backends["trt-fp16"], b), mk(self.backends["trt-int8"], b)]
+                                         if name == "trt-hybrid" else [mk(self.backends[name], b)])
         for be in self.backends.values():                           # the sync path's batch sizes
             for n in range(1, stages.MAX_PERSONS + 1):
                 be.download(be.forward(be.upload(np.zeros((n, *stages.POSE_INPUT), np.float16))))
-        for pose in self.poses.values():                            # every engine and buffer a batch can land on
-            for i in range(N_BUFFERS):
-                for n in sorted({1, *(b for b in ENGINE_SIZES if b <= pose.mb)}):
-                    pose.launch(i, n)[2].synchronize()
+        for routes in self.poses.values():                          # every engine and buffer a batch can land on
+            for pose in routes:
+                for i in range(N_BUFFERS):
+                    for n in sorted({1, *(b for b in ENGINE_SIZES if b <= pose.mb)}):
+                        pose.launch(i, n)[2].synchronize()
+        self.gpu_frames: dict[tuple, GpuFrames] = {}
 
-    def run(self, key: tuple[str, int], video: dict, pools: "CpuPools", cfg: AsyncConfig, frames: int | None,
+    def frames_for(self, shape: tuple[int, int, int], slots: int) -> GpuFrames:
+        """The device frame ring for this frame shape, with every GPU-codec route's CUDA graphs
+        captured over it (between runs, so no pipeline thread is using the GPU)."""
+        key = (tuple(shape), slots)
+        if key not in self.gpu_frames:
+            self.gpu_frames.clear()                                  # one shape in flight at a time
+            for routes in self.poses.values():
+                for pose in routes:
+                    pose.graphs, pose.graph_frames = {}, None
+            torch.cuda.empty_cache()
+            frames = GpuFrames(slots, shape, self.upload_stream)
+            pools = (torch.cuda.graph_pool_handle(), torch.cuda.graph_pool_handle())
+            for routes in self.poses.values():
+                for pose in routes:
+                    pose.capture_graphs(frames, self.capture_stream, pools)
+            torch.cuda.synchronize()
+            self.gpu_frames[key] = frames
+        return self.gpu_frames[key]
+
+    def run(self, key: tuple[str, int], video: dict, pools: "CpuPools | None", cfg: AsyncConfig, frames: int | None,
             start: int = 0, cap=None) -> tuple:
-        return Run(video, self.detector, pools, self.poses[key], cfg, frames, start, self.det_stream, cap).run()
+        gf = self.frames_for(frame_shape(video), cfg.ring_slots) if cfg.codec == "gpu" else None
+        return Run(video, self.detectors[cfg.detector], None if cfg.codec == "gpu" else pools, self.poses[key], cfg,
+                   frames, start, self.det_stream, cap, gf).run()
 
     def release(self) -> None:
-        del self.detector, self.backends, self.poses, self.det_stream
+        del self.detector, self.detectors, self.backends, self.poses, self.det_stream, self.upload_stream
+        del self.capture_stream
+        self.gpu_frames = {}
+
+
+def frame_shape(video: dict) -> tuple[int, int, int]:
+    """(H, W, 3) of a video's decoded frames, read once and cached on the video dict."""
+    if "shape" not in video:
+        cap = stages.open_video(video["path"])
+        ok, frame = cap.read()
+        cap.release()
+        if not ok:
+            raise RuntimeError(f"cannot read a frame from {video['path']}")
+        video["shape"] = frame.shape
+    return tuple(video["shape"])
 
 
 BOX_TOL_BATCHED_DET_PX = 0.5   # a batched YOLO call rounds differently: <= 0.13 px measured on 128 frames

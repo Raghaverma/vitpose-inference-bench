@@ -1,0 +1,1201 @@
+{
+  "phase": "pose",
+  "checkpoint_tag": "upgrades-pose-20260929T022910",
+  "env": {
+    "gpu_name": "NVIDIA L4",
+    "tensorrt_version": "11.3.0.99",
+    "torch_version": "2.14.0+cu130",
+    "cuda_runtime": "13.0",
+    "transformers_version": "5.17.0",
+    "ultralytics_version": "8.4.155",
+    "opencv_version": "5.0.0",
+    "opencv_threads": 1,
+    "cpu_count": 16,
+    "cpu_model": "AMD EPYC 7R13 Processor",
+    "loadavg_at_start": [
+      3.79248046875,
+      3.30859375,
+      2.869140625
+    ],
+    "python": "3.12.3"
+  },
+  "method": "Stage 8 async pipeline, YOLO x4 per call; chunked + guarded units, variants interleaved per chunk",
+  "variants": [
+    {
+      "label": "trt-fp16/b4",
+      "backend": "trt-fp16",
+      "micro_batch": 4,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "frames": 6092,
+      "crops": 21157,
+      "wall_s": 80.79207645915449,
+      "fps": 75.40343393797896,
+      "crops_per_s": 261.8697393016777,
+      "latency_ms": {
+        "p50": 887.039794921875,
+        "p95": 977.964599609375,
+        "p99": 980.6753540039062,
+        "max": 1001.807861328125,
+        "mean": 811.5740356445312
+      },
+      "pad_fraction": 0.0002362725640299157,
+      "pose_gpu_ms_per_frame": 13.230214148153228,
+      "pose_gpu_busy_share": 0.9976035785055865,
+      "stage_busy_share": {
+        "decode": 0.07057585409731677,
+        "detect": 0.4912485834279985,
+        "batcher": 0.1116802235748081,
+        "completer": 0.002577082814901635
+      },
+      "gpu_util_mean_pct": 100.0,
+      "sm_clock_mean_mhz": 1174.1131598430663,
+      "batch_crops_hist": {
+        "2": 1,
+        "3": 5,
+        "4": 5285
+      },
+      "main_process_cpu_cores_busy": 2.1280366161515945,
+      "cpu_cores_busy_total": 2.128302768489081,
+      "crops_per_route": [
+        21157
+      ],
+      "contaminated_attempts_discarded": 0,
+      "crops_per_frame": 3.4729152987524623,
+      "per_video_fps": {
+        "20260909T115853Z-1206c3f5": 75.62551121570978,
+        "20260909T120859Z-61d57625": 114.23189822989566,
+        "20260909T122915Z-0b36ab09": 73.49436849477887
+      },
+      "raw_outputs": "results/raw/pipeline/pose_trt-fp16_b4.npz",
+      "vs_sync_pytorch_matched": {
+        "frames": 6092,
+        "frames_same_people": "6048",
+        "persons_ref": 21151,
+        "persons_cand": 21157,
+        "persons_matched": 21127,
+        "persons_matched_iou0.9": "21121",
+        "person_agreement": 0.9982984355059791,
+        "matched_box_iou": {
+          "p1": 0.9824002385139465,
+          "p50": 0.9986135959625244
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.023179300129413605,
+          "p99": 0.5404660105705261,
+          "max": 9.171000480651855
+        },
+        "joints_scored": 350910,
+        "keypoint_err_crop_px": {
+          "median": 0.055208176374435425,
+          "mean": 0.152151957154274,
+          "p95": 0.39887845516204834,
+          "p99": 0.9450963735580444,
+          "max": 100.45210266113281,
+          "pct_over_2px": 0.2980821293209085,
+          "pct_over_5px": 0.12310848935624519
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110962,
+            "median": 0.13856837153434753,
+            "p95": 0.6247738599777222,
+            "pct_over_5px": 0.3262378111425533
+          },
+          "64-128": {
+            "joints": 65753,
+            "median": 0.0380154587328434,
+            "p95": 0.17219588160514832,
+            "pct_over_5px": 0.007604215777226895
+          },
+          "128-256": {
+            "joints": 95466,
+            "median": 0.03884248062968254,
+            "p95": 0.2118891328573227,
+            "pct_over_5px": 0.024092347013596464
+          },
+          "256-512": {
+            "joints": 50442,
+            "median": 0.03656381368637085,
+            "p95": 0.21486765146255493,
+            "pct_over_5px": 0.051544347963998254
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.045041993260383606,
+            "p95": 0.27857014536857605,
+            "pct_over_5px": 0.05656308551631492
+          }
+        },
+        "gate_failures_int8": []
+      }
+    },
+    {
+      "label": "trt-fp16/b8",
+      "backend": "trt-fp16",
+      "micro_batch": 8,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "frames": 6092,
+      "crops": 21157,
+      "wall_s": 84.34975258610211,
+      "fps": 72.22309269705846,
+      "crops_per_s": 250.82468355083157,
+      "latency_ms": {
+        "p50": 924.9609375,
+        "p95": 1071.258544921875,
+        "p99": 1074.489990234375,
+        "max": 1076.501953125,
+        "mean": 848.70068359375
+      },
+      "pad_fraction": 0.0002362725640299157,
+      "pose_gpu_ms_per_frame": 13.810067630800384,
+      "pose_gpu_busy_share": 0.9974057946519427,
+      "stage_busy_share": {
+        "decode": 0.06533666160818107,
+        "detect": 0.8641044319784181,
+        "batcher": 0.06224698506413842,
+        "completer": 0.0016426831810438297
+      },
+      "gpu_util_mean_pct": 100.0,
+      "sm_clock_mean_mhz": 997.1843767261664,
+      "batch_crops_hist": {
+        "2": 1,
+        "3": 2,
+        "7": 3,
+        "8": 2641
+      },
+      "main_process_cpu_cores_busy": 2.432695280173344,
+      "cpu_cores_busy_total": 2.4327279417984897,
+      "crops_per_route": [
+        21157
+      ],
+      "contaminated_attempts_discarded": 0,
+      "crops_per_frame": 3.4729152987524623,
+      "per_video_fps": {
+        "20260909T115853Z-1206c3f5": 74.65927583048399,
+        "20260909T120859Z-61d57625": 109.01276428142519,
+        "20260909T122915Z-0b36ab09": 70.28982792987858
+      },
+      "raw_outputs": "results/raw/pipeline/pose_trt-fp16_b8.npz",
+      "vs_sync_pytorch_matched": {
+        "frames": 6092,
+        "frames_same_people": "6048",
+        "persons_ref": 21151,
+        "persons_cand": 21157,
+        "persons_matched": 21127,
+        "persons_matched_iou0.9": "21121",
+        "person_agreement": 0.9982984355059791,
+        "matched_box_iou": {
+          "p1": 0.9824002385139465,
+          "p50": 0.9986135959625244
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.023179300129413605,
+          "p99": 0.5404660105705261,
+          "max": 9.171000480651855
+        },
+        "joints_scored": 350910,
+        "keypoint_err_crop_px": {
+          "median": 0.05470221862196922,
+          "mean": 0.15257270634174347,
+          "p95": 0.3973345160484314,
+          "p99": 0.9441639184951782,
+          "max": 100.43990325927734,
+          "pct_over_2px": 0.2992220227408737,
+          "pct_over_5px": 0.1268131429711322
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110962,
+            "median": 0.1379571259021759,
+            "p95": 0.6229501366615295,
+            "pct_over_5px": 0.3379535336421478
+          },
+          "64-128": {
+            "joints": 65753,
+            "median": 0.03771151602268219,
+            "p95": 0.1725025475025177,
+            "pct_over_5px": 0.007604215777226895
+          },
+          "128-256": {
+            "joints": 95466,
+            "median": 0.03829079121351242,
+            "p95": 0.2105029821395874,
+            "pct_over_5px": 0.023044853665179228
+          },
+          "256-512": {
+            "joints": 50442,
+            "median": 0.036166440695524216,
+            "p95": 0.21373622119426727,
+            "pct_over_5px": 0.053526822885690495
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.04412659630179405,
+            "p95": 0.27672287821769714,
+            "pct_over_5px": 0.05656308551631492
+          }
+        },
+        "gate_failures_int8": []
+      },
+      "vs_trt-fp16/b4": {
+        "frames": 6092,
+        "frames_same_people": "6092",
+        "persons_ref": 21157,
+        "persons_cand": 21157,
+        "persons_matched": 21157,
+        "persons_matched_iou0.9": "21157",
+        "person_agreement": 1.0,
+        "matched_box_iou": {
+          "p1": 1.0,
+          "p50": 1.0
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "joints_scored": 351398,
+        "keypoint_err_crop_px": {
+          "median": 0.013835566118359566,
+          "mean": 0.02372858114540577,
+          "p95": 0.056149180978536606,
+          "p99": 0.11527534574270248,
+          "max": 86.47907257080078,
+          "pct_over_2px": 0.01935127689969778,
+          "pct_over_5px": 0.010244793652781177
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 111369,
+            "median": 0.022643687203526497,
+            "p95": 0.0832219123840332,
+            "pct_over_5px": 0.022447898427749195
+          },
+          "64-128": {
+            "joints": 65755,
+            "median": 0.010669099166989326,
+            "p95": 0.03301388770341873,
+            "pct_over_5px": 0.003041593795148658
+          },
+          "128-256": {
+            "joints": 95454,
+            "median": 0.011611295863986015,
+            "p95": 0.03608180955052376,
+            "pct_over_5px": 0.002095250068095627
+          },
+          "256-512": {
+            "joints": 50522,
+            "median": 0.011339809745550156,
+            "p95": 0.04214148595929146,
+            "pct_over_5px": 0.013855350144491508
+          },
+          "512-100000": {
+            "joints": 28298,
+            "median": 0.012603046372532845,
+            "p95": 0.04711998254060745,
+            "pct_over_5px": 0.0
+          }
+        },
+        "gate_failures": []
+      }
+    },
+    {
+      "label": "trt-hybrid/b4",
+      "backend": "trt-hybrid",
+      "micro_batch": 4,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "hybrid_threshold_px": 64.0,
+      "frames": 6092,
+      "crops": 21157,
+      "wall_s": 65.39252033893717,
+      "fps": 93.16050166631356,
+      "crops_per_s": 323.5385314763946,
+      "latency_ms": {
+        "p50": 706.1050415039062,
+        "p95": 822.247314453125,
+        "p99": 834.5237426757812,
+        "max": 857.26171875,
+        "mean": 656.4479370117188
+      },
+      "pad_fraction": 0.0003307503307503623,
+      "pose_gpu_ms_per_frame": 10.697946212515577,
+      "pose_gpu_busy_share": 0.9966260359571903,
+      "stage_busy_share": {
+        "decode": 0.08335372284959733,
+        "detect": 0.47355393208587226,
+        "batcher": 0.31272833775083836,
+        "completer": 0.003035765459382028
+      },
+      "gpu_util_mean_pct": 100.0,
+      "sm_clock_mean_mhz": 1282.0637933292905,
+      "batch_crops_hist": {
+        "1": 2,
+        "2": 1,
+        "3": 7,
+        "4": 5283
+      },
+      "main_process_cpu_cores_busy": 2.3976349617257835,
+      "cpu_cores_busy_total": 2.3976748286706013,
+      "crops_per_route": [
+        6802,
+        14355
+      ],
+      "contaminated_attempts_discarded": 0,
+      "crops_per_frame": 3.4729152987524623,
+      "per_video_fps": {
+        "20260909T115853Z-1206c3f5": 104.75720177520672,
+        "20260909T120859Z-61d57625": 155.67986476684854,
+        "20260909T122915Z-0b36ab09": 89.84738918433271
+      },
+      "raw_outputs": "results/raw/pipeline/pose_trt-hybrid_b4.npz",
+      "vs_sync_pytorch_matched": {
+        "frames": 6092,
+        "frames_same_people": "6048",
+        "persons_ref": 21151,
+        "persons_cand": 21157,
+        "persons_matched": 21127,
+        "persons_matched_iou0.9": "21121",
+        "person_agreement": 0.9982984355059791,
+        "matched_box_iou": {
+          "p1": 0.9824002385139465,
+          "p50": 0.9986135959625244
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.023179300129413605,
+          "p99": 0.5404660105705261,
+          "max": 9.171000480651855
+        },
+        "joints_scored": 350910,
+        "keypoint_err_crop_px": {
+          "median": 0.2498171031475067,
+          "mean": 0.4894843101501465,
+          "p95": 1.1624526977539062,
+          "p99": 2.9236879348754883,
+          "max": 226.89878845214844,
+          "pct_over_2px": 1.816420164714599,
+          "pct_over_5px": 0.5004132113647374
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110962,
+            "median": 0.13854819536209106,
+            "p95": 0.6247738599777222,
+            "pct_over_5px": 0.3262378111425533
+          },
+          "64-128": {
+            "joints": 65753,
+            "median": 0.3209275007247925,
+            "p95": 1.327319622039795,
+            "pct_over_5px": 0.2311681596276976
+          },
+          "128-256": {
+            "joints": 95466,
+            "median": 0.30489784479141235,
+            "p95": 1.0902162790298462,
+            "pct_over_5px": 0.3708126453397021
+          },
+          "256-512": {
+            "joints": 50442,
+            "median": 0.3049536347389221,
+            "p95": 1.5187063217163086,
+            "pct_over_5px": 1.120098330756116
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.3688202202320099,
+            "p95": 1.9364734888076782,
+            "pct_over_5px": 1.1418672888606074
+          }
+        },
+        "gate_failures_int8": []
+      },
+      "vs_trt-fp16/b4": {
+        "frames": 6092,
+        "frames_same_people": "6092",
+        "persons_ref": 21157,
+        "persons_cand": 21157,
+        "persons_matched": 21157,
+        "persons_matched_iou0.9": "21157",
+        "person_agreement": 1.0,
+        "matched_box_iou": {
+          "p1": 1.0,
+          "p50": 1.0
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "joints_scored": 351398,
+        "keypoint_err_crop_px": {
+          "median": 0.18890255689620972,
+          "mean": 0.37928512692451477,
+          "p95": 1.0781702995300293,
+          "p99": 2.558209180831909,
+          "max": 226.97792053222656,
+          "pct_over_2px": 1.513952839799885,
+          "pct_over_5px": 0.3836106067763619
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 111369,
+            "median": 0.0,
+            "p95": 0.0,
+            "pct_over_5px": 0.0
+          },
+          "64-128": {
+            "joints": 65755,
+            "median": 0.3137955665588379,
+            "p95": 1.3178951740264893,
+            "pct_over_5px": 0.22355714394342638
+          },
+          "128-256": {
+            "joints": 95454,
+            "median": 0.29767900705337524,
+            "p95": 1.0545287132263184,
+            "pct_over_5px": 0.3488591363379219
+          },
+          "256-512": {
+            "joints": 50522,
+            "median": 0.29850995540618896,
+            "p95": 1.4897992610931396,
+            "pct_over_5px": 1.0846759827401924
+          },
+          "512-100000": {
+            "joints": 28298,
+            "median": 0.35978958010673523,
+            "p95": 1.8942828178405762,
+            "pct_over_5px": 1.1308219662166936
+          }
+        },
+        "gate_failures": []
+      }
+    },
+    {
+      "label": "trt-hybrid/b8",
+      "backend": "trt-hybrid",
+      "micro_batch": 8,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "hybrid_threshold_px": 64.0,
+      "frames": 6092,
+      "crops": 21157,
+      "wall_s": 60.40699885395588,
+      "fps": 100.84924123988411,
+      "crops_per_s": 350.24087276957124,
+      "latency_ms": {
+        "p50": 645.377685546875,
+        "p95": 790.532958984375,
+        "p99": 804.6821899414062,
+        "max": 836.2326049804688,
+        "mean": 606.3898315429688
+      },
+      "pad_fraction": 0.0006140765233821899,
+      "pose_gpu_ms_per_frame": 9.873807073422192,
+      "pose_gpu_busy_share": 0.9957659515036288,
+      "stage_busy_share": {
+        "decode": 0.09153878283044803,
+        "detect": 0.5798867204968287,
+        "batcher": 0.2079327505820726,
+        "completer": 0.0021808494885594307
+      },
+      "gpu_util_mean_pct": 100.0,
+      "sm_clock_mean_mhz": 1139.07260452289,
+      "batch_crops_hist": {
+        "2": 1,
+        "3": 2,
+        "4": 2,
+        "5": 2,
+        "7": 5,
+        "8": 2637
+      },
+      "main_process_cpu_cores_busy": 2.4645278498263075,
+      "cpu_cores_busy_total": 2.464449531086925,
+      "crops_per_route": [
+        6802,
+        14355
+      ],
+      "contaminated_attempts_discarded": 0,
+      "crops_per_frame": 3.4729152987524623,
+      "per_video_fps": {
+        "20260909T115853Z-1206c3f5": 122.63803986480852,
+        "20260909T120859Z-61d57625": 182.93856131837296,
+        "20260909T122915Z-0b36ab09": 96.56960803400207
+      },
+      "raw_outputs": "results/raw/pipeline/pose_trt-hybrid_b8.npz",
+      "vs_sync_pytorch_matched": {
+        "frames": 6092,
+        "frames_same_people": "6048",
+        "persons_ref": 21151,
+        "persons_cand": 21157,
+        "persons_matched": 21127,
+        "persons_matched_iou0.9": "21121",
+        "person_agreement": 0.9982984355059791,
+        "matched_box_iou": {
+          "p1": 0.9824002385139465,
+          "p50": 0.9986135959625244
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.023179300129413605,
+          "p99": 0.5404660105705261,
+          "max": 9.171000480651855
+        },
+        "joints_scored": 350910,
+        "keypoint_err_crop_px": {
+          "median": 0.24958066642284393,
+          "mean": 0.49041497707366943,
+          "p95": 1.1626133918762207,
+          "p99": 2.9225945472717285,
+          "max": 226.8846435546875,
+          "pct_over_2px": 1.815280271294634,
+          "pct_over_5px": 0.5038328916246332
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110962,
+            "median": 0.13795360922813416,
+            "p95": 0.6229501366615295,
+            "pct_over_5px": 0.3379535336421478
+          },
+          "64-128": {
+            "joints": 65753,
+            "median": 0.3209554851055145,
+            "p95": 1.3282935619354248,
+            "pct_over_5px": 0.2311681596276976
+          },
+          "128-256": {
+            "joints": 95466,
+            "median": 0.3050633668899536,
+            "p95": 1.0900893211364746,
+            "pct_over_5px": 0.3708126453397021
+          },
+          "256-512": {
+            "joints": 50442,
+            "median": 0.3046138882637024,
+            "p95": 1.5156991481781006,
+            "pct_over_5px": 1.1181158558344237
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.368800550699234,
+            "p95": 1.9372122287750244,
+            "pct_over_5px": 1.1418672888606074
+          }
+        },
+        "gate_failures_int8": []
+      },
+      "vs_trt-fp16/b4": {
+        "frames": 6092,
+        "frames_same_people": "6092",
+        "persons_ref": 21157,
+        "persons_cand": 21157,
+        "persons_matched": 21157,
+        "persons_matched_iou0.9": "21157",
+        "person_agreement": 1.0,
+        "matched_box_iou": {
+          "p1": 1.0,
+          "p50": 1.0
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "joints_scored": 351398,
+        "keypoint_err_crop_px": {
+          "median": 0.19087021052837372,
+          "mean": 0.39164769649505615,
+          "p95": 1.0810297727584839,
+          "p99": 2.57712721824646,
+          "max": 226.9637908935547,
+          "pct_over_2px": 1.5296046078805228,
+          "pct_over_5px": 0.38987131400861696
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 111369,
+            "median": 0.02262992039322853,
+            "p95": 0.08311931043863297,
+            "pct_over_5px": 0.022447898427749195
+          },
+          "64-128": {
+            "joints": 65755,
+            "median": 0.3140379786491394,
+            "p95": 1.3197154998779297,
+            "pct_over_5px": 0.222036347045852
+          },
+          "128-256": {
+            "joints": 95454,
+            "median": 0.29762858152389526,
+            "p95": 1.0545670986175537,
+            "pct_over_5px": 0.3488591363379219
+          },
+          "256-512": {
+            "joints": 50522,
+            "median": 0.2987837791442871,
+            "p95": 1.4869416952133179,
+            "pct_over_5px": 1.082696647005265
+          },
+          "512-100000": {
+            "joints": 28298,
+            "median": 0.360322505235672,
+            "p95": 1.893680453300476,
+            "pct_over_5px": 1.1272881475722667
+          }
+        },
+        "gate_failures": []
+      }
+    },
+    {
+      "label": "trt-hybrid/b16",
+      "backend": "trt-hybrid",
+      "micro_batch": 16,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "hybrid_threshold_px": 64.0,
+      "frames": 6092,
+      "crops": 21157,
+      "wall_s": 59.19070037006168,
+      "fps": 102.92157318485286,
+      "crops_per_s": 357.4379060853467,
+      "latency_ms": {
+        "p50": 630.560791015625,
+        "p95": 777.8571166992188,
+        "p99": 797.1204223632812,
+        "max": 850.6138916015625,
+        "mean": 594.2454833984375
+      },
+      "pad_fraction": 0.00498518553355598,
+      "pose_gpu_ms_per_frame": 9.658618536108197,
+      "pose_gpu_busy_share": 0.994080214528636,
+      "stage_busy_share": {
+        "decode": 0.09156462757889694,
+        "detect": 0.6684509761871477,
+        "batcher": 0.1830513368394765,
+        "completer": 0.0016210076349553318
+      },
+      "gpu_util_mean_pct": 100.0,
+      "sm_clock_mean_mhz": 1088.353833217815,
+      "batch_crops_hist": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 2,
+        "5": 6,
+        "6": 2,
+        "7": 3,
+        "8": 1,
+        "10": 5,
+        "11": 4,
+        "12": 3,
+        "13": 4,
+        "14": 3,
+        "16": 1303
+      },
+      "main_process_cpu_cores_busy": 2.5286257649301755,
+      "cpu_cores_busy_total": 2.528437728635108,
+      "crops_per_route": [
+        6802,
+        14355
+      ],
+      "contaminated_attempts_discarded": 0,
+      "crops_per_frame": 3.4729152987524623,
+      "per_video_fps": {
+        "20260909T115853Z-1206c3f5": 126.9065685515553,
+        "20260909T120859Z-61d57625": 187.6785926563403,
+        "20260909T122915Z-0b36ab09": 98.47174731392505
+      },
+      "raw_outputs": "results/raw/pipeline/pose_trt-hybrid_b16.npz",
+      "vs_sync_pytorch_matched": {
+        "frames": 6092,
+        "frames_same_people": "6048",
+        "persons_ref": 21151,
+        "persons_cand": 21157,
+        "persons_matched": 21127,
+        "persons_matched_iou0.9": "21121",
+        "person_agreement": 0.9982984355059791,
+        "matched_box_iou": {
+          "p1": 0.9824002385139465,
+          "p50": 0.9986135959625244
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.023179300129413605,
+          "p99": 0.5404660105705261,
+          "max": 9.171000480651855
+        },
+        "joints_scored": 350910,
+        "keypoint_err_crop_px": {
+          "median": 0.2495747208595276,
+          "mean": 0.4904114603996277,
+          "p95": 1.1626133918762207,
+          "p99": 2.9225945472717285,
+          "max": 226.8846435546875,
+          "pct_over_2px": 1.815280271294634,
+          "pct_over_5px": 0.5038328916246332
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110962,
+            "median": 0.13796569406986237,
+            "p95": 0.6228224039077759,
+            "pct_over_5px": 0.3379535336421478
+          },
+          "64-128": {
+            "joints": 65753,
+            "median": 0.3209554851055145,
+            "p95": 1.3282935619354248,
+            "pct_over_5px": 0.2311681596276976
+          },
+          "128-256": {
+            "joints": 95466,
+            "median": 0.3050633668899536,
+            "p95": 1.0900893211364746,
+            "pct_over_5px": 0.3708126453397021
+          },
+          "256-512": {
+            "joints": 50442,
+            "median": 0.3046138882637024,
+            "p95": 1.5156991481781006,
+            "pct_over_5px": 1.1181158558344237
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.368800550699234,
+            "p95": 1.9372122287750244,
+            "pct_over_5px": 1.1418672888606074
+          }
+        },
+        "gate_failures_int8": []
+      },
+      "vs_trt-fp16/b4": {
+        "frames": 6092,
+        "frames_same_people": "6092",
+        "persons_ref": 21157,
+        "persons_cand": 21157,
+        "persons_matched": 21157,
+        "persons_matched_iou0.9": "21157",
+        "person_agreement": 1.0,
+        "matched_box_iou": {
+          "p1": 1.0,
+          "p50": 1.0
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "joints_scored": 351398,
+        "keypoint_err_crop_px": {
+          "median": 0.19087308645248413,
+          "mean": 0.39165788888931274,
+          "p95": 1.0810297727584839,
+          "p99": 2.57712721824646,
+          "max": 226.9637908935547,
+          "pct_over_2px": 1.5296046078805228,
+          "pct_over_5px": 0.38987131400861696
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 111369,
+            "median": 0.022647982463240623,
+            "p95": 0.08325368911027908,
+            "pct_over_5px": 0.022447898427749195
+          },
+          "64-128": {
+            "joints": 65755,
+            "median": 0.3140379786491394,
+            "p95": 1.3197154998779297,
+            "pct_over_5px": 0.222036347045852
+          },
+          "128-256": {
+            "joints": 95454,
+            "median": 0.29762858152389526,
+            "p95": 1.0545670986175537,
+            "pct_over_5px": 0.3488591363379219
+          },
+          "256-512": {
+            "joints": 50522,
+            "median": 0.2987837791442871,
+            "p95": 1.4869416952133179,
+            "pct_over_5px": 1.082696647005265
+          },
+          "512-100000": {
+            "joints": 28298,
+            "median": 0.360322505235672,
+            "p95": 1.893680453300476,
+            "pct_over_5px": 1.1272881475722667
+          }
+        },
+        "gate_failures": []
+      }
+    },
+    {
+      "label": "trt-int8/b8",
+      "backend": "trt-int8",
+      "micro_batch": 8,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "frames": 6092,
+      "crops": 21157,
+      "wall_s": 49.47321902500698,
+      "fps": 123.13732803439993,
+      "crops_per_s": 427.64551037816796,
+      "latency_ms": {
+        "p50": 539.14404296875,
+        "p95": 594.263671875,
+        "p99": 600.755126953125,
+        "max": 612.4896240234375,
+        "mean": 495.6328430175781
+      },
+      "pad_fraction": 0.0002362725640299157,
+      "pose_gpu_ms_per_frame": 8.081372966127653,
+      "pose_gpu_busy_share": 0.9951186738983923,
+      "stage_busy_share": {
+        "decode": 0.11409514060524542,
+        "detect": 0.6166178123742074,
+        "batcher": 0.17873519565441606,
+        "completer": 0.002693673948878432
+      },
+      "gpu_util_mean_pct": 100.0,
+      "sm_clock_mean_mhz": 1271.4663545234164,
+      "batch_crops_hist": {
+        "2": 1,
+        "3": 2,
+        "7": 3,
+        "8": 2641
+      },
+      "main_process_cpu_cores_busy": 2.654302258634594,
+      "cpu_cores_busy_total": 2.6547696428164946,
+      "crops_per_route": [
+        21157
+      ],
+      "contaminated_attempts_discarded": 0,
+      "crops_per_frame": 3.4729152987524623,
+      "per_video_fps": {
+        "20260909T115853Z-1206c3f5": 121.75277580143978,
+        "20260909T120859Z-61d57625": 182.08343706085176,
+        "20260909T122915Z-0b36ab09": 120.26045132034959
+      },
+      "raw_outputs": "results/raw/pipeline/pose_trt-int8_b8.npz",
+      "vs_sync_pytorch_matched": {
+        "frames": 6092,
+        "frames_same_people": "6048",
+        "persons_ref": 21151,
+        "persons_cand": 21157,
+        "persons_matched": 21127,
+        "persons_matched_iou0.9": "21121",
+        "person_agreement": 0.9982984355059791,
+        "matched_box_iou": {
+          "p1": 0.9824002385139465,
+          "p50": 0.9986135959625244
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.023179300129413605,
+          "p99": 0.5404660105705261,
+          "max": 9.171000480651855
+        },
+        "joints_scored": 350910,
+        "keypoint_err_crop_px": {
+          "median": 0.4860001504421234,
+          "mean": 2.0622684955596924,
+          "p95": 6.009572982788086,
+          "p99": 43.04729461669922,
+          "max": 226.8846435546875,
+          "pct_over_2px": 17.27935937989798,
+          "pct_over_5px": 6.175657576016643
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110962,
+            "median": 1.9839625358581543,
+            "p95": 25.021324157714844,
+            "pct_over_5px": 18.27472468052126
+          },
+          "64-128": {
+            "joints": 65753,
+            "median": 0.3209554851055145,
+            "p95": 1.3282935619354248,
+            "pct_over_5px": 0.2311681596276976
+          },
+          "128-256": {
+            "joints": 95466,
+            "median": 0.3050633668899536,
+            "p95": 1.0900893211364746,
+            "pct_over_5px": 0.3708126453397021
+          },
+          "256-512": {
+            "joints": 50442,
+            "median": 0.3046138882637024,
+            "p95": 1.5156991481781006,
+            "pct_over_5px": 1.1181158558344237
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.368800550699234,
+            "p95": 1.9372122287750244,
+            "pct_over_5px": 1.1418672888606074
+          }
+        },
+        "gate_failures_int8": [
+          "p95 6.0096 >= 2.5",
+          "pct_over_5px 6.1757 >= 1.0"
+        ]
+      },
+      "vs_trt-fp16/b4": {
+        "frames": 6092,
+        "frames_same_people": "6092",
+        "persons_ref": 21157,
+        "persons_cand": 21157,
+        "persons_matched": 21157,
+        "persons_matched_iou0.9": "21157",
+        "person_agreement": 1.0,
+        "matched_box_iou": {
+          "p1": 1.0,
+          "p50": 1.0
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "joints_scored": 351398,
+        "keypoint_err_crop_px": {
+          "median": 0.4769075810909271,
+          "mean": 2.0544891357421875,
+          "p95": 6.001705169677734,
+          "p99": 43.13804244995117,
+          "max": 226.9637908935547,
+          "pct_over_2px": 17.20983044866505,
+          "pct_over_5px": 6.153990631705359
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 111369,
+            "median": 1.9773688316345215,
+            "p95": 25.050010681152344,
+            "pct_over_5px": 18.209735204590146
+          },
+          "64-128": {
+            "joints": 65755,
+            "median": 0.3140379786491394,
+            "p95": 1.3197154998779297,
+            "pct_over_5px": 0.222036347045852
+          },
+          "128-256": {
+            "joints": 95454,
+            "median": 0.29762858152389526,
+            "p95": 1.0545670986175537,
+            "pct_over_5px": 0.3488591363379219
+          },
+          "256-512": {
+            "joints": 50522,
+            "median": 0.2987837791442871,
+            "p95": 1.4869416952133179,
+            "pct_over_5px": 1.082696647005265
+          },
+          "512-100000": {
+            "joints": 28298,
+            "median": 0.360322505235672,
+            "p95": 1.893680453300476,
+            "pct_over_5px": 1.1272881475722667
+          }
+        },
+        "gate_failures": [
+          "p95 6.0017 >= 2.5",
+          "pct_over_5px 6.1540 >= 1.0"
+        ]
+      }
+    },
+    {
+      "label": "trt-int8/b16",
+      "backend": "trt-int8",
+      "micro_batch": 16,
+      "codec": "gpu",
+      "detector": "trt16",
+      "max_persons": 4,
+      "frames": 6092,
+      "crops": 21157,
+      "wall_s": 47.68205449404195,
+      "fps": 127.76295116984143,
+      "crops_per_s": 443.7099077315061,
+      "latency_ms": {
+        "p50": 524.2845458984375,
+        "p95": 573.3609619140625,
+        "p99": 580.544921875,
+        "max": 588.7241821289062,
+        "mean": 477.21929931640625
+      },
+      "pad_fraction": 0.0004252102428422555,
+      "pose_gpu_ms_per_frame": 7.780850355983642,
+      "pose_gpu_busy_share": 0.9941044040913813,
+      "stage_busy_share": {
+        "decode": 0.11296895289240366,
+        "detect": 0.5998787122938024,
+        "batcher": 0.09728014137977808,
+        "completer": 0.0019943457267520832
+      },
+      "gpu_util_mean_pct": 100.0,
+      "sm_clock_mean_mhz": 1166.7473274125985,
+      "batch_crops_hist": {
+        "2": 1,
+        "3": 1,
+        "7": 2,
+        "8": 1,
+        "11": 1,
+        "15": 1,
+        "16": 1319
+      },
+      "main_process_cpu_cores_busy": 2.601366264859643,
+      "cpu_cores_busy_total": 2.6011882523958363,
+      "crops_per_route": [
+        21157
+      ],
+      "contaminated_attempts_discarded": 0,
+      "crops_per_frame": 3.4729152987524623,
+      "per_video_fps": {
+        "20260909T115853Z-1206c3f5": 126.32339562481363,
+        "20260909T120859Z-61d57625": 186.9436578192804,
+        "20260909T122915Z-0b36ab09": 124.84446756479406
+      },
+      "raw_outputs": "results/raw/pipeline/pose_trt-int8_b16.npz",
+      "vs_sync_pytorch_matched": {
+        "frames": 6092,
+        "frames_same_people": "6048",
+        "persons_ref": 21151,
+        "persons_cand": 21157,
+        "persons_matched": 21127,
+        "persons_matched_iou0.9": "21121",
+        "person_agreement": 0.9982984355059791,
+        "matched_box_iou": {
+          "p1": 0.9824002385139465,
+          "p50": 0.9986135959625244
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.023179300129413605,
+          "p99": 0.5404660105705261,
+          "max": 9.171000480651855
+        },
+        "joints_scored": 350910,
+        "keypoint_err_crop_px": {
+          "median": 0.4860001504421234,
+          "mean": 2.0622684955596924,
+          "p95": 6.009572982788086,
+          "p99": 43.04729461669922,
+          "max": 226.8846435546875,
+          "pct_over_2px": 17.27935937989798,
+          "pct_over_5px": 6.175657576016643
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110962,
+            "median": 1.9839625358581543,
+            "p95": 25.021324157714844,
+            "pct_over_5px": 18.27472468052126
+          },
+          "64-128": {
+            "joints": 65753,
+            "median": 0.3209554851055145,
+            "p95": 1.3282935619354248,
+            "pct_over_5px": 0.2311681596276976
+          },
+          "128-256": {
+            "joints": 95466,
+            "median": 0.3050633668899536,
+            "p95": 1.0900893211364746,
+            "pct_over_5px": 0.3708126453397021
+          },
+          "256-512": {
+            "joints": 50442,
+            "median": 0.3046138882637024,
+            "p95": 1.5156991481781006,
+            "pct_over_5px": 1.1181158558344237
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.368800550699234,
+            "p95": 1.9372122287750244,
+            "pct_over_5px": 1.1418672888606074
+          }
+        },
+        "gate_failures_int8": [
+          "p95 6.0096 >= 2.5",
+          "pct_over_5px 6.1757 >= 1.0"
+        ]
+      },
+      "vs_trt-fp16/b4": {
+        "frames": 6092,
+        "frames_same_people": "6092",
+        "persons_ref": 21157,
+        "persons_cand": 21157,
+        "persons_matched": 21157,
+        "persons_matched_iou0.9": "21157",
+        "person_agreement": 1.0,
+        "matched_box_iou": {
+          "p1": 1.0,
+          "p50": 1.0
+        },
+        "matched_box_center_shift_px": {
+          "p50": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "joints_scored": 351398,
+        "keypoint_err_crop_px": {
+          "median": 0.4769075810909271,
+          "mean": 2.0544891357421875,
+          "p95": 6.001705169677734,
+          "p99": 43.13804244995117,
+          "max": 226.9637908935547,
+          "pct_over_2px": 17.20983044866505,
+          "pct_over_5px": 6.153990631705359
+        },
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 111369,
+            "median": 1.9773688316345215,
+            "p95": 25.050010681152344,
+            "pct_over_5px": 18.209735204590146
+          },
+          "64-128": {
+            "joints": 65755,
+            "median": 0.3140379786491394,
+            "p95": 1.3197154998779297,
+            "pct_over_5px": 0.222036347045852
+          },
+          "128-256": {
+            "joints": 95454,
+            "median": 0.29762858152389526,
+            "p95": 1.0545670986175537,
+            "pct_over_5px": 0.3488591363379219
+          },
+          "256-512": {
+            "joints": 50522,
+            "median": 0.2987837791442871,
+            "p95": 1.4869416952133179,
+            "pct_over_5px": 1.082696647005265
+          },
+          "512-100000": {
+            "joints": 28298,
+            "median": 0.360322505235672,
+            "p95": 1.893680453300476,
+            "pct_over_5px": 1.1272881475722667
+          }
+        },
+        "gate_failures": [
+          "p95 6.0017 >= 2.5",
+          "pct_over_5px 6.1540 >= 1.0"
+        ]
+      }
+    }
+  ],
+  "created_utc": "2026-09-29T02:39:26.842925+00:00"
+}
