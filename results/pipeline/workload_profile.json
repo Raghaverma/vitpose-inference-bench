@@ -1,0 +1,285 @@
+{
+  "stage": 9,
+  "purpose": "people per frame on the real workload (every AutoClipping job video on this box), for choosing the pose batching policy -- see pipeline/workload_profile.py",
+  "method": {
+    "detector": "pipeline.stages.detect (YOLOv8s, conf 0.35, person class)",
+    "max_persons": 4,
+    "every_nth_frame": 5,
+    "dedup": "by calibration.real_corpus.content_fingerprint"
+  },
+  "videos": 82,
+  "videos_by_mode": {
+    "batsman": 52,
+    "bowler": 30
+  },
+  "videos_by_resolution": {
+    "1280x720": 55,
+    "1920x1080": 19,
+    "720x1280": 4,
+    "1080x1920": 2,
+    "1180x2556": 1,
+    "3840x2160": 1
+  },
+  "frames_decoded": 131013,
+  "all": {
+    "frames": 26235,
+    "detected_hist": {
+      "0": 1972,
+      "1": 5489,
+      "2": 5612,
+      "3": 3979,
+      "4": 1920,
+      "5": 1920,
+      "6": 1170,
+      "7": 296,
+      "8": 76,
+      "9": 115,
+      "10": 229,
+      "11": 406,
+      "12": 567,
+      "13": 678,
+      "14": 596,
+      "15": 510,
+      "16": 301,
+      "17": 203,
+      "18": 120,
+      "19": 54,
+      "20": 13,
+      "21": 8,
+      "22": 1
+    },
+    "crops_hist": {
+      "0": 1972,
+      "1": 5489,
+      "2": 5612,
+      "3": 3979,
+      "4": 9183
+    },
+    "mean_detected": 4.076081570421193,
+    "mean_crops": 2.492166952544311,
+    "frames_capped_pct": 27.684391080617495,
+    "frames_empty_pct": 7.5166761959214785,
+    "per_frame_engine_pad_fraction": 0.057366531624399864
+  },
+  "by_mode": {
+    "batsman": {
+      "frames": 6546,
+      "detected_hist": {
+        "0": 382,
+        "1": 2301,
+        "2": 1854,
+        "3": 1349,
+        "4": 425,
+        "5": 181,
+        "6": 45,
+        "7": 9
+      },
+      "crops_hist": {
+        "0": 382,
+        "1": 2301,
+        "2": 1854,
+        "3": 1349,
+        "4": 660
+      },
+      "mean_detected": 1.985029025358998,
+      "mean_crops": 1.9395050412465629,
+      "frames_capped_pct": 3.58997861289337,
+      "frames_empty_pct": 5.835624809043691,
+      "per_frame_engine_pad_fraction": 0.09604841580633683
+    },
+    "bowler": {
+      "frames": 19689,
+      "detected_hist": {
+        "0": 1590,
+        "1": 3188,
+        "2": 3758,
+        "3": 2630,
+        "4": 1495,
+        "5": 1739,
+        "6": 1125,
+        "7": 287,
+        "8": 76,
+        "9": 115,
+        "10": 229,
+        "11": 406,
+        "12": 567,
+        "13": 678,
+        "14": 596,
+        "15": 510,
+        "16": 301,
+        "17": 203,
+        "18": 120,
+        "19": 54,
+        "20": 13,
+        "21": 8,
+        "22": 1
+      },
+      "crops_hist": {
+        "0": 1590,
+        "1": 3188,
+        "2": 3758,
+        "3": 2630,
+        "4": 8523
+      },
+      "mean_detected": 4.771293615724516,
+      "mean_crops": 2.6759104068261466,
+      "frames_capped_pct": 35.69505815429935,
+      "frames_empty_pct": 8.075575194270913,
+      "per_frame_engine_pad_fraction": 0.047545014100802696
+    }
+  },
+  "by_resolution": {
+    "1080x1920": {
+      "frames": 257,
+      "detected_hist": {
+        "0": 31,
+        "1": 204,
+        "2": 21,
+        "3": 1
+      },
+      "crops_hist": {
+        "0": 31,
+        "1": 204,
+        "2": 21,
+        "3": 1
+      },
+      "mean_detected": 0.9688715953307393,
+      "mean_crops": 0.9688715953307393,
+      "frames_capped_pct": 0.0,
+      "frames_empty_pct": 12.062256809338521,
+      "per_frame_engine_pad_fraction": 0.0040000000000000036
+    },
+    "1180x2556": {
+      "frames": 353,
+      "detected_hist": {
+        "0": 280,
+        "1": 65,
+        "2": 8
+      },
+      "crops_hist": {
+        "0": 280,
+        "1": 65,
+        "2": 8
+      },
+      "mean_detected": 0.22946175637393768,
+      "mean_crops": 0.22946175637393768,
+      "frames_capped_pct": 0.0,
+      "frames_empty_pct": 79.3201133144476,
+      "per_frame_engine_pad_fraction": 0.0
+    },
+    "1280x720": {
+      "frames": 16979,
+      "detected_hist": {
+        "0": 533,
+        "1": 3237,
+        "2": 4250,
+        "3": 3427,
+        "4": 1226,
+        "5": 401,
+        "6": 167,
+        "7": 23,
+        "8": 20,
+        "9": 95,
+        "10": 213,
+        "11": 399,
+        "12": 556,
+        "13": 660,
+        "14": 583,
+        "15": 497,
+        "16": 293,
+        "17": 203,
+        "18": 120,
+        "19": 54,
+        "20": 13,
+        "21": 8,
+        "22": 1
+      },
+      "crops_hist": {
+        "0": 533,
+        "1": 3237,
+        "2": 4250,
+        "3": 3427,
+        "4": 5532
+      },
+      "mean_detected": 4.727486895576889,
+      "mean_crops": 2.6000353377701866,
+      "frames_capped_pct": 25.360739737322575,
+      "frames_empty_pct": 3.139171918251958,
+      "per_frame_engine_pad_fraction": 0.07203665944968785
+    },
+    "1920x1080": {
+      "frames": 8415,
+      "detected_hist": {
+        "0": 1113,
+        "1": 1786,
+        "2": 1314,
+        "3": 551,
+        "4": 694,
+        "5": 1519,
+        "6": 1003,
+        "7": 273,
+        "8": 56,
+        "9": 20,
+        "10": 16,
+        "11": 7,
+        "12": 11,
+        "13": 18,
+        "14": 13,
+        "15": 13,
+        "16": 8
+      },
+      "crops_hist": {
+        "0": 1113,
+        "1": 1786,
+        "2": 1314,
+        "3": 551,
+        "4": 3651
+      },
+      "mean_detected": 3.1019607843137256,
+      "mean_crops": 2.4564468211527033,
+      "frames_capped_pct": 35.139631610219844,
+      "frames_empty_pct": 13.22638146167558,
+      "per_frame_engine_pad_fraction": 0.025963622655734597
+    },
+    "3840x2160": {
+      "frames": 27,
+      "detected_hist": {
+        "1": 27
+      },
+      "crops_hist": {
+        "1": 27
+      },
+      "mean_detected": 1.0,
+      "mean_crops": 1.0,
+      "frames_capped_pct": 0.0,
+      "frames_empty_pct": 0.0,
+      "per_frame_engine_pad_fraction": 0.0
+    },
+    "720x1280": {
+      "frames": 204,
+      "detected_hist": {
+        "0": 15,
+        "1": 170,
+        "2": 19
+      },
+      "crops_hist": {
+        "0": 15,
+        "1": 170,
+        "2": 19
+      },
+      "mean_detected": 1.0196078431372548,
+      "mean_crops": 1.0196078431372548,
+      "frames_capped_pct": 0.0,
+      "frames_empty_pct": 7.352941176470589,
+      "per_frame_engine_pad_fraction": 0.0
+    }
+  },
+  "per_video_mean_crops_quantiles": {
+    "min": 0.0,
+    "p25": 1.0,
+    "p50": 2.021965579710145,
+    "p75": 2.679990649836372,
+    "max": 4.0
+  },
+  "created_utc": "2026-09-28T21:40:52.628506+00:00"
+}

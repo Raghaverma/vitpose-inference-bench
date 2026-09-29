@@ -1,0 +1,712 @@
+{
+  "stage": 8,
+  "backend": "pytorch",
+  "config": {
+    "micro_batch": 16,
+    "batch_timeout_ms": 50.0,
+    "preprocess_workers": 6,
+    "postprocess_workers": 2,
+    "ring_slots": 64,
+    "max_persons": 4,
+    "det_batch": 1
+  },
+  "workload": [
+    {
+      "job_id": "20260909T115853Z-1206c3f5",
+      "fingerprint": "9e78ac4f1926b4f9-20811455"
+    },
+    {
+      "job_id": "20260909T120859Z-61d57625",
+      "fingerprint": "af1261444dee6523-15526171"
+    },
+    {
+      "job_id": "20260909T122915Z-0b36ab09",
+      "fingerprint": "3d85f2d9d31f42ca-249653841"
+    }
+  ],
+  "sync": {
+    "total": {
+      "frames": 6092,
+      "wall_s": 334.5662905459758,
+      "fps": 18.208648546327005,
+      "cpu_cores_busy": 3.433722441448806,
+      "contaminated_attempts_discarded": 0
+    },
+    "per_video": {
+      "20260909T115853Z-1206c3f5": {
+        "frames": 310,
+        "wall_s": 17.103205449006055,
+        "fps": 18.1252573340289,
+        "cpu_cores_busy": 3.4630204365253676,
+        "contaminated_attempts_discarded": 0
+      },
+      "20260909T120859Z-61d57625": {
+        "frames": 408,
+        "wall_s": 19.206518853025045,
+        "fps": 21.242787572394445,
+        "cpu_cores_busy": 3.8174439397929785,
+        "contaminated_attempts_discarded": 0
+      },
+      "20260909T122915Z-0b36ab09": {
+        "frames": 5374,
+        "wall_s": 298.2565662439447,
+        "fps": 18.018044221714113,
+        "cpu_cores_busy": 3.407332263621643,
+        "contaminated_attempts_discarded": 0
+      }
+    }
+  },
+  "async": {
+    "det_batch=1": {
+      "config": {
+        "micro_batch": 16,
+        "batch_timeout_ms": 50.0,
+        "preprocess_workers": 6,
+        "postprocess_workers": 2,
+        "ring_slots": 64,
+        "max_persons": 4,
+        "det_batch": 1
+      },
+      "total": {
+        "frames": 6092,
+        "crops": 21151,
+        "wall_s": 108.27768359304173,
+        "fps": 56.262747759700794,
+        "crops_per_s": 195.34034436399074,
+        "latency_ms": {
+          "p50": 1178.914306640625,
+          "p95": 1315.3629150390625,
+          "p99": 1341.7069091796875,
+          "max": 1420.1331787109375,
+          "mean": 1094.8282470703125
+        },
+        "batches": 1348,
+        "batch_crops_hist": {
+          "1": 1,
+          "3": 2,
+          "5": 1,
+          "6": 2,
+          "7": 5,
+          "8": 4,
+          "9": 3,
+          "10": 6,
+          "11": 19,
+          "12": 9,
+          "13": 9,
+          "14": 23,
+          "15": 7,
+          "16": 1257
+        },
+        "pad_fraction": 0.0,
+        "pose_gpu_ms_per_frame": 17.386836321355478,
+        "pose_gpu_busy_share": 0.9782311862876273,
+        "stage_busy_share": {
+          "decode": 0.059042985159238864,
+          "detect": 0.8320579979152196,
+          "preprocess": 0.23469888820090268,
+          "batcher": 0.9090459727535227,
+          "completer": 0.003551180911384893,
+          "postprocess": 0.1759749416683605
+        },
+        "stage_busy_s": {
+          "decode": 6.393037665460724,
+          "detect": 90.09331262932392,
+          "preprocess": 152.47591173753608,
+          "batcher": 98.42939220933476,
+          "completer": 0.384513643104583,
+          "postprocess": 38.108318108541425
+        },
+        "pose_gpu_s": 105.92060686969756,
+        "gpu_util_mean_pct": 99.2161501778406,
+        "sm_clock_mean_mhz": 1020.6741436172761,
+        "main_process_cpu_cores_busy": 3.001650009632145,
+        "queue_depth_mean": {
+          "det_q": 13.607555454322474,
+          "pre_q": 0.016694481731673535,
+          "pre_done_q": 36.10903002044609,
+          "post_q": 0.25553694078597444,
+          "free_slots": 2.1505805699869107
+        },
+        "contaminated_attempts_discarded": 0
+      },
+      "speedup_vs_sync": 3.0898914664949118,
+      "per_video": {
+        "20260909T115853Z-1206c3f5": {
+          "frames": 310,
+          "crops": 1100,
+          "wall_s": 5.465981215995271,
+          "fps": 56.714428343229095,
+          "crops_per_s": 201.2447457340387,
+          "latency_ms": {
+            "p50": 1099.864990234375,
+            "p95": 1280.2216796875,
+            "p99": 1289.916748046875,
+            "max": 1336.184326171875,
+            "mean": 1016.4408569335938
+          },
+          "batches": 71,
+          "batch_crops_hist": {
+            "1": 1,
+            "10": 1,
+            "11": 2,
+            "13": 1,
+            "15": 2,
+            "16": 64
+          },
+          "pad_fraction": 0.0,
+          "pose_gpu_ms_per_frame": 17.23669207480646,
+          "pose_gpu_busy_share": 0.9775691375509157,
+          "stage_busy_share": {
+            "decode": 0.0611885409968455,
+            "detect": 0.8476657647487502,
+            "preprocess": 0.2442863579355743,
+            "batcher": 0.8768922029297092,
+            "completer": 0.004133086076161326,
+            "postprocess": 0.18785999293275443
+          },
+          "stage_busy_s": {
+            "decode": 0.33445541572291404,
+            "detect": 4.633325147558935,
+            "preprocess": 8.011587862798478,
+            "batcher": 4.793076309666503,
+            "completer": 0.022591370856389403,
+            "postprocess": 2.05367838521488
+          },
+          "pose_gpu_s": 5.343374543190002,
+          "gpu_util_mean_pct": 100.0,
+          "sm_clock_mean_mhz": 1036.5,
+          "main_process_cpu_cores_busy": 3.0890365943062488,
+          "queue_depth_mean": {
+            "det_q": 28.259259259259263,
+            "pre_q": 0.018518518518518517,
+            "pre_done_q": 18.037037037037038,
+            "post_q": 0.2962962962962963,
+            "free_slots": 5.685185185185185
+          },
+          "contaminated_attempts_discarded": 0,
+          "speedup_vs_sync": 3.129027483474772
+        },
+        "20260909T120859Z-61d57625": {
+          "frames": 408,
+          "crops": 919,
+          "wall_s": 5.299962444987614,
+          "fps": 76.98167755619889,
+          "crops_per_s": 173.3974550836931,
+          "latency_ms": {
+            "p50": 794.0968017578125,
+            "p95": 1022.3650512695312,
+            "p99": 1045.5694580078125,
+            "max": 1053.5880126953125,
+            "mean": 773.0726318359375
+          },
+          "batches": 65,
+          "batch_crops_hist": {
+            "5": 1,
+            "8": 1,
+            "9": 2,
+            "10": 1,
+            "11": 4,
+            "12": 6,
+            "13": 2,
+            "14": 15,
+            "15": 2,
+            "16": 31
+          },
+          "pad_fraction": 0.0,
+          "pose_gpu_ms_per_frame": 10.588247841479731,
+          "pose_gpu_busy_share": 0.8151010812179117,
+          "stage_busy_share": {
+            "decode": 0.08025835214277482,
+            "detect": 0.9784565275302453,
+            "preprocess": 0.2056429470644082,
+            "batcher": 0.5257396289935587,
+            "completer": 0.004208036039266359,
+            "postprocess": 0.16456715165836758
+          },
+          "stage_busy_s": {
+            "decode": 0.4253662522532977,
+            "detect": 5.185782849963289,
+            "preprocess": 6.5393993791076355,
+            "batcher": 2.786400289507583,
+            "completer": 0.02230243297526613,
+            "postprocess": 1.7443994469358586
+          },
+          "pose_gpu_s": 4.3200051193237305,
+          "gpu_util_mean_pct": 91.9,
+          "sm_clock_mean_mhz": 1117.5,
+          "main_process_cpu_cores_busy": 2.4168597670185825,
+          "queue_depth_mean": {
+            "det_q": 48.05769230769231,
+            "pre_q": 0.0,
+            "pre_done_q": 0.7692307692307693,
+            "post_q": 0.38461538461538464,
+            "free_slots": 3.5192307692307687
+          },
+          "contaminated_attempts_discarded": 0,
+          "speedup_vs_sync": 3.6238971600995806
+        },
+        "20260909T122915Z-0b36ab09": {
+          "frames": 5374,
+          "crops": 19132,
+          "wall_s": 97.51173993205884,
+          "fps": 55.11131278904803,
+          "crops_per_s": 196.20201642725473,
+          "latency_ms": {
+            "p50": 1202.135009765625,
+            "p95": 1317.9697265625,
+            "p99": 1343.863525390625,
+            "max": 1420.1331787109375,
+            "mean": 1123.778076171875
+          },
+          "batches": 1212,
+          "batch_crops_hist": {
+            "3": 2,
+            "6": 2,
+            "7": 5,
+            "8": 3,
+            "9": 1,
+            "10": 4,
+            "11": 13,
+            "12": 3,
+            "13": 6,
+            "14": 8,
+            "15": 3,
+            "16": 1162
+          },
+          "pad_fraction": 0.0,
+          "pose_gpu_ms_per_frame": 17.911653741567516,
+          "pose_gpu_busy_share": 0.9871347519206498,
+          "stage_busy_share": {
+            "decode": 0.057769618318875726,
+            "detect": 0.8232260514245016,
+            "preprocess": 0.23574071626611137,
+            "batcher": 0.9316818228601009,
+            "completer": 0.0034828610330361973,
+            "postprocess": 0.17592876663002985
+          },
+          "stage_busy_s": {
+            "decode": 5.633215997484513,
+            "detect": 80.2742046318017,
+            "preprocess": 137.92492449562997,
+            "batcher": 90.84991561016068,
+            "completer": 0.3396198392729275,
+            "postprocess": 34.31024027639069
+          },
+          "pose_gpu_s": 96.25722720718383,
+          "gpu_util_mean_pct": 99.56985951380766,
+          "sm_clock_mean_mhz": 1014.5243483550335,
+          "main_process_cpu_cores_busy": 3.028536135297784,
+          "queue_depth_mean": {
+            "det_q": 10.913824735224754,
+            "pre_q": 0.017499615302840704,
+            "pre_done_q": 39.042838639050174,
+            "post_q": 0.24623651422215054,
+            "free_slots": 1.8780607984447713
+          },
+          "contaminated_attempts_discarded": 0,
+          "speedup_vs_sync": 3.058673411547722
+        }
+      },
+      "equivalence_vs_sync": {
+        "frames": 6092,
+        "box_tol_px": 0.0,
+        "frames_same_boxes": 6092,
+        "frames_boxes_identical": 6092,
+        "frames_boxes_differ": 0,
+        "box_max_abs_diff_px": {
+          "p50": 0.0,
+          "p99": 0.0,
+          "max": 0.0
+        },
+        "crops_compared": 21151,
+        "joints_scored": 351309,
+        "visible_score": 0.3,
+        "keypoint_err_crop_px": {
+          "median": 0.003578151809051633,
+          "mean": 0.006366340443491936,
+          "p95": 0.013366003520786762,
+          "p99": 0.026177963241934776,
+          "max": 85.55994415283203,
+          "pct_over_2px": 0.0079701914838504,
+          "pct_over_5px": 0.004269745437777
+        },
+        "score_abs_diff_mean": 0.0001303816243307665,
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 111277,
+            "median": 0.005696895066648722,
+            "p95": 0.0191061869263649,
+            "pct_over_5px": 0.010783899637840703
+          },
+          "64-128": {
+            "joints": 65770,
+            "median": 0.0027685377281159163,
+            "p95": 0.008706510998308659,
+            "pct_over_5px": 0.0
+          },
+          "128-256": {
+            "joints": 95500,
+            "median": 0.002983029931783676,
+            "p95": 0.009065552614629269,
+            "pct_over_5px": 0.0010471204188481674
+          },
+          "256-512": {
+            "joints": 50475,
+            "median": 0.0029376542661339045,
+            "p95": 0.010174285620450974,
+            "pct_over_5px": 0.0019811788013868255
+          },
+          "512-100000": {
+            "joints": 28287,
+            "median": 0.0033454964868724346,
+            "p95": 0.011827079579234123,
+            "pct_over_5px": 0.0035351928447696825
+          }
+        },
+        "per_video": {
+          "20260909T115853Z-1206c3f5": {
+            "frames": 310,
+            "frames_same_boxes": 310,
+            "median_err_px": 0.0038495981134474277
+          },
+          "20260909T120859Z-61d57625": {
+            "frames": 408,
+            "frames_same_boxes": 408,
+            "median_err_px": 0.004222881980240345
+          },
+          "20260909T122915Z-0b36ab09": {
+            "frames": 5374,
+            "frames_same_boxes": 5374,
+            "median_err_px": 0.003532815258949995
+          }
+        },
+        "gate_failures": []
+      },
+      "outputs_sha256": "b15dca890af3d31fb451a745d5395b5fcc9ff5bd8bb27be9ded4532a2f7bdaa9",
+      "raw_outputs": "results/raw/pipeline/async_pytorch_det_batch1.npz"
+    },
+    "det_batch=4": {
+      "config": {
+        "micro_batch": 16,
+        "batch_timeout_ms": 50.0,
+        "preprocess_workers": 6,
+        "postprocess_workers": 2,
+        "ring_slots": 64,
+        "max_persons": 4,
+        "det_batch": 4
+      },
+      "total": {
+        "frames": 6092,
+        "crops": 21151,
+        "wall_s": 106.86047433095518,
+        "fps": 57.00891782617961,
+        "crops_per_s": 197.9309949017605,
+        "latency_ms": {
+          "p50": 1162.001708984375,
+          "p95": 1308.90966796875,
+          "p99": 1317.913818359375,
+          "max": 1472.33642578125,
+          "mean": 1080.7652587890625
+        },
+        "batches": 1327,
+        "batch_crops_hist": {
+          "1": 3,
+          "7": 1,
+          "8": 1,
+          "9": 1,
+          "12": 2,
+          "14": 2,
+          "16": 1317
+        },
+        "pad_fraction": 0.0,
+        "pose_gpu_ms_per_frame": 17.401688110335282,
+        "pose_gpu_busy_share": 0.9920514075189109,
+        "stage_busy_share": {
+          "decode": 0.059669112794840704,
+          "detect": 0.5802389075482244,
+          "preprocess": 0.2448758243959596,
+          "batcher": 0.9478491915477033,
+          "completer": 0.003168881592242917,
+          "postprocess": 0.1740952545425897
+        },
+        "stage_busy_s": {
+          "decode": 6.376269696163945,
+          "detect": 62.00460488587851,
+          "preprocess": 157.00528048281558,
+          "batcher": 101.28761420299998,
+          "completer": 0.33862819004571065,
+          "postprocess": 37.207802958379034
+        },
+        "pose_gpu_s": 106.01108396816254,
+        "gpu_util_mean_pct": 100.0,
+        "sm_clock_mean_mhz": 1021.9963902551673,
+        "main_process_cpu_cores_busy": 2.8771249231759857,
+        "queue_depth_mean": {
+          "det_q": 1.8604889656569013,
+          "pre_q": 0.055445528138383,
+          "pre_done_q": 46.43264770136076,
+          "post_q": 0.24912554351993166,
+          "free_slots": 2.1973454175914946
+        },
+        "contaminated_attempts_discarded": 0
+      },
+      "speedup_vs_sync": 3.130870348841967,
+      "per_video": {
+        "20260909T115853Z-1206c3f5": {
+          "frames": 310,
+          "crops": 1100,
+          "wall_s": 5.438645638991147,
+          "fps": 56.99948490438956,
+          "crops_per_s": 202.25623675751135,
+          "latency_ms": {
+            "p50": 1067.04833984375,
+            "p95": 1240.9991455078125,
+            "p99": 1246.9151611328125,
+            "max": 1255.246337890625,
+            "mean": 1009.3047485351562
+          },
+          "batches": 69,
+          "batch_crops_hist": {
+            "12": 1,
+            "16": 68
+          },
+          "pad_fraction": 0.0,
+          "pose_gpu_ms_per_frame": 17.169898420764554,
+          "pose_gpu_busy_share": 0.9786753658442714,
+          "stage_busy_share": {
+            "decode": 0.07176156763793005,
+            "detect": 0.5453268623981262,
+            "preprocess": 0.2540836878033549,
+            "batcher": 0.9294806010885397,
+            "completer": 0.0031999458879513887,
+            "postprocess": 0.1842317129024073
+          },
+          "stage_busy_s": {
+            "decode": 0.3902857368811965,
+            "detect": 2.9658395620062947,
+            "preprocess": 8.291226843663026,
+            "batcher": 5.055115617637057,
+            "completer": 0.017403371748514473,
+            "postprocess": 2.003942003881093
+          },
+          "pose_gpu_s": 5.322668510437012,
+          "gpu_util_mean_pct": 100.0,
+          "sm_clock_mean_mhz": 1065.0,
+          "main_process_cpu_cores_busy": 2.9448123785043796,
+          "queue_depth_mean": {
+            "det_q": 3.4814814814814814,
+            "pre_q": 0.037037037037037035,
+            "pre_done_q": 40.98148148148148,
+            "post_q": 0.3333333333333333,
+            "free_slots": 6.074074074074075
+          },
+          "contaminated_attempts_discarded": 0,
+          "speedup_vs_sync": 3.144754518733206
+        },
+        "20260909T120859Z-61d57625": {
+          "frames": 408,
+          "crops": 919,
+          "wall_s": 4.971619319985621,
+          "fps": 82.06581673698622,
+          "crops_per_s": 184.8492293659077,
+          "latency_ms": {
+            "p50": 757.5707397460938,
+            "p95": 980.3641967773438,
+            "p99": 990.5302124023438,
+            "max": 1054.7813720703125,
+            "mean": 732.7466430664062
+          },
+          "batches": 58,
+          "batch_crops_hist": {
+            "9": 1,
+            "14": 1,
+            "16": 56
+          },
+          "pad_fraction": 0.0,
+          "pose_gpu_ms_per_frame": 11.898275010726032,
+          "pose_gpu_busy_share": 0.9764416565165053,
+          "stage_busy_share": {
+            "decode": 0.10531909962050423,
+            "detect": 0.7586383359739208,
+            "preprocess": 0.25353806586522515,
+            "batcher": 0.9201152983371248,
+            "completer": 0.003197506461215801,
+            "postprocess": 0.17887463882312224
+          },
+          "stage_busy_s": {
+            "decode": 0.5236064704367891,
+            "detect": 3.771661008009687,
+            "preprocess": 7.5629684796440415,
+            "batcher": 4.574462993827183,
+            "completer": 0.01589678489835933,
+            "postprocess": 1.778593220456969
+          },
+          "pose_gpu_s": 4.854496204376221,
+          "gpu_util_mean_pct": 100.0,
+          "sm_clock_mean_mhz": 1000.0,
+          "main_process_cpu_cores_busy": 3.155499645142846,
+          "queue_depth_mean": {
+            "det_q": 6.387755102040816,
+            "pre_q": 0.06122448979591837,
+            "pre_done_q": 34.775510204081634,
+            "post_q": 0.40816326530612246,
+            "free_slots": 3.2448979591836733
+          },
+          "contaminated_attempts_discarded": 0,
+          "speedup_vs_sync": 3.86323200085251
+        },
+        "20260909T122915Z-0b36ab09": {
+          "frames": 5374,
+          "crops": 19132,
+          "wall_s": 96.45020937197842,
+          "fps": 55.717867643751354,
+          "crops_per_s": 198.3614149163102,
+          "latency_ms": {
+            "p50": 1173.3704833984375,
+            "p95": 1309.79296875,
+            "p99": 1318.542724609375,
+            "max": 1472.33642578125,
+            "mean": 1111.3094482421875
+          },
+          "batches": 1200,
+          "batch_crops_hist": {
+            "1": 3,
+            "7": 1,
+            "8": 1,
+            "12": 1,
+            "14": 1,
+            "16": 1193
+          },
+          "pad_fraction": 0.0,
+          "pose_gpu_ms_per_frame": 17.83288411859868,
+          "pose_gpu_busy_share": 0.9936102770264368,
+          "stage_busy_share": {
+            "decode": 0.05663416932335803,
+            "detect": 0.5730117609461532,
+            "preprocess": 0.24391010670789515,
+            "batcher": 0.950314532113033,
+            "completer": 0.003165654438564065,
+            "postprocess": 0.17327732076314176
+          },
+          "stage_busy_s": {
+            "decode": 5.462377488845959,
+            "detect": 55.267104315862525,
+            "preprocess": 141.1510851595085,
+            "batcher": 91.65803559153574,
+            "completer": 0.30532803339883685,
+            "postprocess": 33.42526773404097
+          },
+          "pose_gpu_s": 95.83391925334931,
+          "gpu_util_mean_pct": 100.0,
+          "sm_clock_mean_mhz": 1020.7053229091459,
+          "main_process_cpu_cores_busy": 2.8589590607992132,
+          "queue_depth_mean": {
+            "det_q": 1.535721939526525,
+            "pre_q": 0.05618566611099608,
+            "pre_done_q": 47.34090712305378,
+            "post_q": 0.23617947168445433,
+            "free_slots": 1.9247468817582547
+          },
+          "contaminated_attempts_discarded": 0,
+          "speedup_vs_sync": 3.0923371570263987
+        }
+      },
+      "equivalence_vs_sync": {
+        "frames": 6092,
+        "box_tol_px": 0.5,
+        "frames_same_boxes": 6055,
+        "frames_boxes_identical": 1259,
+        "frames_boxes_differ": 37,
+        "box_max_abs_diff_px": {
+          "p50": 0.0050048828125,
+          "p99": 0.09000000357627869,
+          "max": 222.02279663085938
+        },
+        "crops_compared": 21016,
+        "joints_scored": 349076,
+        "visible_score": 0.3,
+        "keypoint_err_crop_px": {
+          "median": 0.011413078755140305,
+          "mean": 0.03579326719045639,
+          "p95": 0.09542637318372726,
+          "p99": 0.2287639081478119,
+          "max": 116.25871276855469,
+          "pct_over_2px": 0.04640823201824244,
+          "pct_over_5px": 0.0277876450973427
+        },
+        "score_abs_diff_mean": 0.0006318021332845092,
+        "by_crop_height_px": {
+          "0-64": {
+            "joints": 110602,
+            "median": 0.030038923025131226,
+            "p95": 0.16997885704040527,
+            "pct_over_5px": 0.07775627927162257
+          },
+          "64-128": {
+            "joints": 65413,
+            "median": 0.009115731343626976,
+            "p95": 0.04130576550960541,
+            "pct_over_5px": 0.0030574962163484325
+          },
+          "128-256": {
+            "joints": 94941,
+            "median": 0.008337843231856823,
+            "p95": 0.038851793855428696,
+            "pct_over_5px": 0.004213142899274286
+          },
+          "256-512": {
+            "joints": 50027,
+            "median": 0.007967209443449974,
+            "p95": 0.041336704045534134,
+            "pct_over_5px": 0.003997841165770484
+          },
+          "512-100000": {
+            "joints": 28093,
+            "median": 0.00864906795322895,
+            "p95": 0.047318849712610245,
+            "pct_over_5px": 0.01067881678709999
+          }
+        },
+        "per_video": {
+          "20260909T115853Z-1206c3f5": {
+            "frames": 310,
+            "frames_same_boxes": 306,
+            "median_err_px": 0.011316780932247639
+          },
+          "20260909T120859Z-61d57625": {
+            "frames": 408,
+            "frames_same_boxes": 407,
+            "median_err_px": 0.013336481526494026
+          },
+          "20260909T122915Z-0b36ab09": {
+            "frames": 5374,
+            "frames_same_boxes": 5342,
+            "median_err_px": 0.011313009075820446
+          }
+        },
+        "gate_failures": []
+      },
+      "outputs_sha256": "40179055d2f314fb4f6f0ca600565a3bc7535e0ddb1912c87088973cf6d2b36c",
+      "raw_outputs": "results/raw/pipeline/async_pytorch_det_batch4.npz"
+    }
+  },
+  "checkpoint_tag": "stage8-20260928T221204",
+  "env": {
+    "gpu_name": "NVIDIA L4",
+    "tensorrt_version": "11.3.0.99",
+    "torch_version": "2.14.0+cu130",
+    "cuda_runtime": "13.0",
+    "transformers_version": "5.17.0",
+    "ultralytics_version": "8.4.155",
+    "opencv_version": "5.0.0",
+    "opencv_threads": 1,
+    "cpu_count": 16,
+    "cpu_model": "AMD EPYC 7R13 Processor",
+    "loadavg_at_start": [
+      2.134765625,
+      1.10595703125,
+      1.95361328125
+    ],
+    "python": "3.12.3"
+  }
+}

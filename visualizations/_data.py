@@ -212,3 +212,49 @@ def load_batch_matrix() -> dict:
                 assert_positive(stats["mean_ms"], f"batch_matrix[batch={cell['batch']}].{backend}.mean_ms")
                 assert_positive(stats["fps"], f"batch_matrix[batch={cell['batch']}].{backend}.fps")
     return data
+
+
+def load_stage7() -> dict:
+    """Stage 7 synchronous video pipeline: {backend: report} plus the cross-backend summary.
+    Refuses a report whose stage sum failed the sync-additivity check against its own plain
+    pass -- its breakdown would misattribute time between stages."""
+    rdir = REPO_ROOT / "results" / "pipeline"
+    summary = _require_file(rdir / "sync_summary.json", "python -m pipeline.sync_pipeline")
+    reports = {}
+    for name in summary["backends"]:
+        r = _require_file(rdir / f"sync_{name}.json", "python -m pipeline.sync_pipeline")
+        add = r["total"]["sync_additivity"]
+        if not add["ok"]:
+            raise ValueError(f"{rdir}/sync_{name}.json failed its sync-additivity check "
+                             f"({add['rel_diff']:.1%} > {add['tolerance']:.0%}) -- re-run pipeline.sync_pipeline")
+        for stage, ms in r["total"]["instrumented"]["stage_ms_per_frame"].items():
+            if not ms >= 0:
+                raise ValueError(f"sync_{name}.json: stage {stage} has {ms!r} ms/frame")
+        assert_positive(r["total"]["plain"]["fps"], f"stage7.{name}.plain.fps")
+        reports[name] = r
+    return {"summary": summary, "reports": reports}
+
+
+def load_stage8() -> dict:
+    """Stage 8 asynchronous pipeline vs Stage 7's synchronous one, paired in one process."""
+    rdir = REPO_ROOT / "results" / "pipeline"
+    summary = _require_file(rdir / "async_summary.json", "python -m pipeline.async_pipeline")
+    for name, b in summary["backends"].items():
+        assert_positive(b["sync_fps"], f"stage8.{name}.sync_fps")
+        for variant, a in b["async"].items():
+            assert_positive(a["fps"], f"stage8.{name}.{variant}.fps")
+            if a["gate_failures"]:
+                raise ValueError(f"async_summary.json: {name} {variant} failed its equivalence gates vs the "
+                                 f"synchronous pipeline ({a['gate_failures']}) -- a faster pipeline with different "
+                                 f"poses is not a result")
+    return summary
+
+
+def load_stage9() -> dict:
+    """Stage 9: the workload's crop-count profile and the micro-batch sweep."""
+    rdir = REPO_ROOT / "results" / "pipeline"
+    profile = _require_file(rdir / "workload_profile.json", "python -m pipeline.workload_profile")
+    sweep = _require_file(rdir / "production_config.json", "python -m pipeline.production_config")
+    for row in sweep["sweep"]:
+        assert_positive(row["fps"], f"stage9.sweep[{row['backend']}, b={row['micro_batch']}].fps")
+    return {"profile": profile, "sweep": sweep}

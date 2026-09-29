@@ -1,0 +1,21 @@
+{
+  "preprocess": {
+    "frames_per_s": {
+      "1_thread": 37.48567482020274,
+      "4_threads": 139.63188282709459,
+      "4_processes": 146.41569349043974
+    },
+    "thread_scaling": 3.724939820260101,
+    "process_scaling": 3.905910569643251
+  },
+  "postprocess": {
+    "frames_per_s": {
+      "1_thread": 193.86205670551263,
+      "4_threads": 128.15455985286025,
+      "4_processes": 660.6348594660356
+    },
+    "thread_scaling": 0.6610605604351667,
+    "process_scaling": 3.4077574059248588
+  },
+  "method": "48 real 1280x720 frames x 4 fixed boxes, torch/cv2 at 1 intra-op thread"
+}

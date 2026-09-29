@@ -25,6 +25,7 @@ from visualizations import (
     batch_scaling,
     latency,
     numerical_equivalence,
+    pipeline,
     stage_breakdown,
     throughput,
     vram_scaling,
@@ -39,6 +40,7 @@ GENERATORS = [
     ("numerical_equivalence", numerical_equivalence.generate),
     ("batch_matrix (Stage 4: throughput/latency vs batch)", batch_matrix.generate),
     ("vram_scaling (Stage 4: TensorRT VRAM breakdown)", vram_scaling.generate),
+    ("pipeline (Stages 7-9: video pipelines, production configuration)", pipeline.generate),
 ]
 
 

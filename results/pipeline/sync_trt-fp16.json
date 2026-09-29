@@ -1,0 +1,772 @@
+{
+  "stage": 7,
+  "label": "synchronous video pipeline: decode -> detect -> preprocess -> h2d -> pose -> d2h -> postprocess, one frame at a time, no overlap",
+  "backend": {
+    "backend": "trt-fp16",
+    "engines": [
+      {
+        "engine_sha256": "1c544bcea16af96e272cc3c31454374a84137ffcafa73bfb3c83c317851f5917",
+        "batch": 1
+      },
+      {
+        "engine_sha256": "8abaaa4ef67fa8061308a5ec050e9fd8591e87a7e06a4ac4c3852f6c8a1e433d",
+        "batch": 2
+      },
+      {
+        "engine_sha256": "be4e1d4a5bf3aef276311868cbf6da6833918af604c57bdcf85d33ebd7afb108",
+        "batch": 4
+      }
+    ],
+    "batching": "one forward per frame on the smallest static engine >= persons in frame, pad slots zeroed"
+  },
+  "config": {
+    "det_conf": 0.35,
+    "max_persons": 4,
+    "dataset_index": 0,
+    "detector": "checkpoints/yolov8s.pt (ultralytics, fp32)",
+    "decode": "cv2.VideoCapture (FFmpeg, its default decode threads)",
+    "preprocess": "HF VitPoseImageProcessor (scipy affine warp), cast to fp16 on the CPU",
+    "postprocess": "HF post_process_pose_estimation (DARK)",
+    "max_frames": null,
+    "warmup_frames": 60
+  },
+  "workload": [
+    {
+      "job_id": "20260909T115853Z-1206c3f5",
+      "fingerprint": "9e78ac4f1926b4f9-20811455"
+    },
+    {
+      "job_id": "20260909T120859Z-61d57625",
+      "fingerprint": "af1261444dee6523-15526171"
+    },
+    {
+      "job_id": "20260909T122915Z-0b36ab09",
+      "fingerprint": "3d85f2d9d31f42ca-249653841"
+    }
+  ],
+  "total": {
+    "frames": 6092,
+    "frames_with_persons": 6074,
+    "crops": 21151,
+    "crops_per_frame": 3.471930400525279,
+    "detected_persons_hist": {
+      "0": 18,
+      "1": 82,
+      "2": 647,
+      "3": 1605,
+      "4": 2183,
+      "5": 1078,
+      "6": 421,
+      "7": 58
+    },
+    "frames_capped": 1557,
+    "plain": {
+      "wall_s": 259.2511200890294,
+      "fps": 23.498451994760703,
+      "crops_per_s": 81.58498984589357,
+      "ms_per_frame": 42.55599476182361,
+      "cpu_cores_busy": 4.136883584656051
+    },
+    "instrumented": {
+      "wall_s": 260.03497508500004,
+      "stage_total_ms": {
+        "decode": 4185.034591529984,
+        "detect": 49818.81888315547,
+        "preprocess": 112902.3805327015,
+        "h2d": 1456.6555771161802,
+        "pose": 59572.37001898466,
+        "d2h": 910.0018794415519,
+        "postprocess": 30891.254851594567
+      },
+      "stage_ms_per_frame": {
+        "decode": 0.6869721916497019,
+        "detect": 8.17774439973005,
+        "preprocess": 18.532892405236623,
+        "h2d": 0.23910958258637233,
+        "pose": 9.778786936799845,
+        "d2h": 0.1493765396325594,
+        "postprocess": 5.070790356466606
+      },
+      "stage_ms_per_crop": {
+        "preprocess": 5.337921636456976,
+        "h2d": 0.06886934788502577,
+        "pose": 2.816527351850251,
+        "d2h": 0.04302405935613218,
+        "postprocess": 1.4605103707434433
+      },
+      "stage_share": {
+        "decode": 0.01611261539420945,
+        "detect": 0.19180521701843434,
+        "preprocess": 0.4346804297139741,
+        "h2d": 0.005608204797973426,
+        "pose": 0.2293569300908744,
+        "d2h": 0.0035035577295166615,
+        "postprocess": 0.11893304525501766
+      },
+      "stage_p50_ms_frames_with_persons": {
+        "decode": 0.4832505073864013,
+        "detect": 8.010978024685755,
+        "preprocess": 20.444985013455153,
+        "h2d": 0.2531450008973479,
+        "pose": 10.37363801151514,
+        "d2h": 0.15131299733184278,
+        "postprocess": 5.422457004897296
+      },
+      "unattributed_ms_per_frame": 0.03638066088007818,
+      "yolo_speed_ms_per_frame": {
+        "preprocess": 0.654129961682716,
+        "inference": 5.9108312803037615,
+        "postprocess": 1.1698027413206338
+      },
+      "cpu_cores_busy": 4.126006121481501,
+      "postprocess_share_of_pose_path": 0.3327713120890096,
+      "gpu_ms_per_frame": 16.07810433932254,
+      "gpu_busy_share": 0.377104509667799
+    },
+    "sync_additivity": {
+      "stage_sum_ms": 259736.5163345239,
+      "plain_wall_ms": 259251.12008902943,
+      "rel_diff": 0.0018723014401164206,
+      "tolerance": 0.1,
+      "ok": true
+    }
+  },
+  "per_video": {
+    "20260909T115853Z-1206c3f5": {
+      "frames": 310,
+      "frames_with_persons": 310,
+      "crops": 1100,
+      "crops_per_frame": 3.5483870967741935,
+      "detected_persons_hist": {
+        "1": 1,
+        "2": 11,
+        "3": 115,
+        "4": 136,
+        "5": 45,
+        "6": 2
+      },
+      "frames_capped": 47,
+      "plain": {
+        "wall_s": 13.590888184960932,
+        "fps": 22.80939963460461,
+        "crops_per_s": 80.93657934859701,
+        "ms_per_frame": 43.84157479019655,
+        "cpu_cores_busy": 4.115468557963181
+      },
+      "instrumented": {
+        "wall_s": 13.483535134990234,
+        "stage_total_ms": {
+          "decode": 187.24885780829936,
+          "detect": 2543.0879143532366,
+          "preprocess": 5869.784212205559,
+          "h2d": 74.26426972961053,
+          "pose": 3134.8525526118465,
+          "d2h": 44.455797818955034,
+          "postprocess": 1615.0820771581493
+        },
+        "stage_ms_per_frame": {
+          "decode": 0.6040285735751593,
+          "detect": 8.203509401139472,
+          "preprocess": 18.934787781308255,
+          "h2d": 0.2395621604180985,
+          "pose": 10.112427589070473,
+          "d2h": 0.14340579941598397,
+          "postprocess": 5.209942184381127
+        },
+        "stage_ms_per_crop": {
+          "preprocess": 5.3361674656414175,
+          "h2d": 0.06751297248146412,
+          "pose": 2.8498659569198606,
+          "d2h": 0.040414361653595486,
+          "postprocess": 1.4682564337801358
+        },
+        "stage_share": {
+          "decode": 0.013902440892449745,
+          "detect": 0.18881359185536317,
+          "preprocess": 0.43580681354631773,
+          "h2d": 0.005513809976848329,
+          "pose": 0.23274962971389473,
+          "d2h": 0.003300656189515754,
+          "postprocess": 0.11991305782561056
+        },
+        "stage_p50_ms_frames_with_persons": {
+          "decode": 0.4412389826029539,
+          "detect": 7.940809009596705,
+          "preprocess": 19.91266050026752,
+          "h2d": 0.24813998606987298,
+          "pose": 10.282853996613994,
+          "d2h": 0.14084801659919322,
+          "postprocess": 5.348073464119807
+        },
+        "unattributed_ms_per_frame": 0.03622115679806279,
+        "yolo_speed_ms_per_frame": {
+          "preprocess": 0.6461972795096377,
+          "inference": 5.949014185311934,
+          "postprocess": 1.1719287367492555
+        },
+        "cpu_cores_busy": 4.135582578436349,
+        "postprocess_share_of_pose_path": 0.33173066844269417,
+        "gpu_ms_per_frame": 16.44440973421649,
+        "gpu_busy_share": 0.3784877807816539
+      },
+      "sync_additivity": {
+        "stage_sum_ms": 13468.775681685656,
+        "plain_wall_ms": 13590.888184960932,
+        "rel_diff": 0.008984880282541022,
+        "tolerance": 0.1,
+        "ok": true
+      }
+    },
+    "20260909T120859Z-61d57625": {
+      "frames": 408,
+      "frames_with_persons": 408,
+      "crops": 919,
+      "crops_per_frame": 2.252450980392157,
+      "detected_persons_hist": {
+        "1": 4,
+        "2": 300,
+        "3": 101,
+        "4": 3
+      },
+      "frames_capped": 0,
+      "plain": {
+        "wall_s": 13.084596066968516,
+        "fps": 31.181703883849956,
+        "crops_per_s": 70.23525948347576,
+        "ms_per_frame": 32.070088399432635,
+        "cpu_cores_busy": 5.1239185876934075
+      },
+      "instrumented": {
+        "wall_s": 13.038034772966057,
+        "stage_total_ms": {
+          "decode": 373.4472543001175,
+          "detect": 3259.2179275816306,
+          "preprocess": 4972.672898264136,
+          "h2d": 72.8862431133166,
+          "pose": 2822.2745876410045,
+          "d2h": 49.793426878750324,
+          "postprocess": 1468.5504981316626
+        },
+        "stage_ms_per_frame": {
+          "decode": 0.9153118977944056,
+          "detect": 7.988279234268703,
+          "preprocess": 12.187923770255235,
+          "h2d": 0.17864275272871716,
+          "pose": 6.917339675590697,
+          "d2h": 0.12204271293811354,
+          "postprocess": 3.5993884758128987
+        },
+        "stage_ms_per_crop": {
+          "preprocess": 5.410960716283064,
+          "h2d": 0.07931038423647073,
+          "pose": 3.071027842917306,
+          "d2h": 0.05418218376360209,
+          "postprocess": 1.5979874843652477
+        },
+        "stage_share": {
+          "decode": 0.028685134232515397,
+          "detect": 0.2503462073135673,
+          "preprocess": 0.38195966883844146,
+          "h2d": 0.0055985193178821014,
+          "pose": 0.21678382811843794,
+          "d2h": 0.00382471986998739,
+          "postprocess": 0.11280192230916836
+        },
+        "stage_p50_ms_frames_with_persons": {
+          "decode": 0.49448051140643656,
+          "detect": 7.880370016209781,
+          "preprocess": 10.820682509802282,
+          "h2d": 0.16533350571990013,
+          "pose": 5.762238492025062,
+          "d2h": 0.11638199794106185,
+          "postprocess": 3.0823364795651287
+        },
+        "unattributed_ms_per_frame": 0.03557808639586666,
+        "yolo_speed_ms_per_frame": {
+          "preprocess": 0.63850352807112,
+          "inference": 5.786459687834733,
+          "postprocess": 1.1337804546700698
+        },
+        "cpu_cores_busy": 5.118142355193248,
+        "postprocess_share_of_pose_path": 0.33274020974226975,
+        "gpu_ms_per_frame": 13.004484829092261,
+        "gpu_busy_share": 0.40755003168440357
+      },
+      "sync_additivity": {
+        "stage_sum_ms": 13018.842835910618,
+        "plain_wall_ms": 13084.596066968516,
+        "rel_diff": 0.0050252396574846005,
+        "tolerance": 0.1,
+        "ok": true
+      }
+    },
+    "20260909T122915Z-0b36ab09": {
+      "frames": 5374,
+      "frames_with_persons": 5356,
+      "crops": 19132,
+      "crops_per_frame": 3.560104205433569,
+      "detected_persons_hist": {
+        "0": 18,
+        "1": 77,
+        "2": 336,
+        "3": 1389,
+        "4": 2044,
+        "5": 1033,
+        "6": 419,
+        "7": 58
+      },
+      "frames_capped": 1510,
+      "plain": {
+        "wall_s": 232.57563583709998,
+        "fps": 23.106461606167738,
+        "crops_per_s": 82.26141113680706,
+        "ms_per_frame": 43.27793744642724,
+        "cpu_cores_busy": 4.082604876398389
+      },
+      "instrumented": {
+        "wall_s": 233.51340517704375,
+        "stage_total_ms": {
+          "decode": 3624.338479421567,
+          "detect": 44016.513041220605,
+          "preprocess": 102059.9234222318,
+          "h2d": 1309.505064273253,
+          "pose": 53615.242878731806,
+          "d2h": 815.7526547438465,
+          "postprocess": 27807.622276304755
+        },
+        "stage_ms_per_frame": {
+          "decode": 0.674421004730474,
+          "detect": 8.190642545817008,
+          "preprocess": 18.991426018279085,
+          "h2d": 0.24367418389900505,
+          "pose": 9.976785053727541,
+          "d2h": 0.1517961769154906,
+          "postprocess": 5.1744738139755775
+        },
+        "stage_ms_per_crop": {
+          "preprocess": 5.3345140822826576,
+          "h2d": 0.06844580097602201,
+          "pose": 2.8023856825596805,
+          "d2h": 0.042638127469362665,
+          "postprocess": 1.4534613357884567
+        },
+        "stage_share": {
+          "decode": 0.015538502060859629,
+          "detect": 0.1887104867512312,
+          "preprocess": 0.43755800939448203,
+          "h2d": 0.005614196150676164,
+          "pose": 0.2298627919811794,
+          "d2h": 0.0034973483792584276,
+          "postprocess": 0.11921866528231313
+        },
+        "stage_p50_ms_frames_with_persons": {
+          "decode": 0.48590105143375695,
+          "detect": 8.019822009373456,
+          "preprocess": 20.502895989920944,
+          "h2d": 0.25435598217882216,
+          "pose": 10.377848491771147,
+          "d2h": 0.15487801283597946,
+          "postprocess": 5.444897513370961
+        },
+        "unattributed_ms_per_frame": 0.03645079423604824,
+        "yolo_speed_ms_per_frame": {
+          "preprocess": 0.6557739357034055,
+          "inference": 5.918071121981251,
+          "postprocess": 1.172414954638564
+        },
+        "cpu_cores_busy": 4.070058022062679,
+        "postprocess_share_of_pose_path": 0.332833597209885,
+        "gpu_ms_per_frame": 16.29032653652329,
+        "gpu_busy_share": 0.37532530968694156
+      },
+      "sync_additivity": {
+        "stage_sum_ms": 233248.89781692764,
+        "plain_wall_ms": 232575.63583709998,
+        "rel_diff": 0.002894808724931195,
+        "tolerance": 0.1,
+        "ok": true
+      }
+    }
+  },
+  "stage5_postprocess_share_for_reference": {
+    "1": 0.256,
+    "16": 0.367
+  },
+  "determinism_plain_vs_instrumented_identical": true,
+  "outputs_sha256": "447cbf8e222633418bfa5666b9cacca3d38f115d8dac8a436ff764dcf3cfbc1b",
+  "raw_outputs": "results/raw/pipeline/sync_trt-fp16.npz",
+  "units": {
+    "instr": {
+      "20260909T115853Z-1206c3f5": [
+        {
+          "frames": 310,
+          "wall_s": 13.483535134990234,
+          "cpu_s": 55.762273000000015,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.24320139566075893,
+            "foreign_cpu_cores_max": 1.1590933475034726,
+            "samples": 26,
+            "gpu_util_mean_pct": 28.115384615384617,
+            "sm_clock_mean_mhz": 1992.1153846153845,
+            "power_mean_w": 50.386
+          },
+          "contaminated_attempts": []
+        }
+      ],
+      "20260909T120859Z-61d57625": [
+        {
+          "frames": 408,
+          "wall_s": 13.038034772966057,
+          "cpu_s": 66.73051799999996,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.20702238180330304,
+            "foreign_cpu_cores_max": 0.651875248553046,
+            "samples": 25,
+            "gpu_util_mean_pct": 28.96,
+            "sm_clock_mean_mhz": 2025.6,
+            "power_mean_w": 51.02824
+          },
+          "contaminated_attempts": []
+        }
+      ],
+      "20260909T122915Z-0b36ab09": [
+        {
+          "frames": 1000,
+          "wall_s": 44.92542124399915,
+          "cpu_s": 179.09804700000004,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.21989145151808281,
+            "foreign_cpu_cores_max": 0.9036306795493758,
+            "samples": 88,
+            "gpu_util_mean_pct": 28.329545454545453,
+            "sm_clock_mean_mhz": 1995.340909090909,
+            "power_mean_w": 51.40414772727272
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 45.358356174023356,
+          "cpu_s": 179.43173600000006,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.20062209436604778,
+            "foreign_cpu_cores_max": 1.106302024893671,
+            "samples": 91,
+            "gpu_util_mean_pct": 27.483516483516482,
+            "sm_clock_mean_mhz": 1994.3406593406594,
+            "power_mean_w": 51.582857142857144
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 45.27672988601262,
+          "cpu_s": 179.69304699999978,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.19077983555549502,
+            "foreign_cpu_cores_max": 1.279519912095261,
+            "samples": 93,
+            "gpu_util_mean_pct": 26.849462365591396,
+            "sm_clock_mean_mhz": 1983.3870967741937,
+            "power_mean_w": 51.61423655913978
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 43.40218660101527,
+          "cpu_s": 177.3600269999999,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.18525258523567703,
+            "foreign_cpu_cores_max": 0.9308324029633201,
+            "samples": 91,
+            "gpu_util_mean_pct": 26.63736263736264,
+            "sm_clock_mean_mhz": 1992.3626373626373,
+            "power_mean_w": 50.488351648351646
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 42.010530388972256,
+          "cpu_s": 175.92981500000022,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.1794421968476527,
+            "foreign_cpu_cores_max": 0.8983164220148487,
+            "samples": 90,
+            "gpu_util_mean_pct": 27.1,
+            "sm_clock_mean_mhz": 1990.8333333333333,
+            "power_mean_w": 51.59615555555555
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 374,
+          "wall_s": 12.540180883021094,
+          "cpu_s": 58.90043599999962,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.19834803352289074,
+            "foreign_cpu_cores_max": 0.8712578958160736,
+            "samples": 34,
+            "gpu_util_mean_pct": 20.676470588235293,
+            "sm_clock_mean_mhz": 2019.7058823529412,
+            "power_mean_w": 46.6465
+          },
+          "contaminated_attempts": []
+        }
+      ]
+    },
+    "plain": {
+      "20260909T115853Z-1206c3f5": [
+        {
+          "frames": 310,
+          "wall_s": 13.590888184960932,
+          "cpu_s": 55.932873,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.21667333106405642,
+            "foreign_cpu_cores_max": 0.9073961584999496,
+            "samples": 26,
+            "gpu_util_mean_pct": 29.192307692307693,
+            "sm_clock_mean_mhz": 1981.1538461538462,
+            "power_mean_w": 50.44315384615384
+          },
+          "contaminated_attempts": []
+        }
+      ],
+      "20260909T120859Z-61d57625": [
+        {
+          "frames": 408,
+          "wall_s": 13.084596066968516,
+          "cpu_s": 67.04440500000003,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.18719168213348708,
+            "foreign_cpu_cores_max": 0.5908799429674759,
+            "samples": 25,
+            "gpu_util_mean_pct": 28.72,
+            "sm_clock_mean_mhz": 2023.8,
+            "power_mean_w": 51.284
+          },
+          "contaminated_attempts": []
+        }
+      ],
+      "20260909T122915Z-0b36ab09": [
+        {
+          "frames": 1000,
+          "wall_s": 44.80764509097207,
+          "cpu_s": 179.305766,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.20212135919423468,
+            "foreign_cpu_cores_max": 0.9001556862528558,
+            "samples": 88,
+            "gpu_util_mean_pct": 28.59090909090909,
+            "sm_clock_mean_mhz": 1999.6022727272727,
+            "power_mean_w": 51.08560227272728
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 45.308952090039384,
+          "cpu_s": 179.45710999999991,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.18947142708535689,
+            "foreign_cpu_cores_max": 0.8315965653967758,
+            "samples": 91,
+            "gpu_util_mean_pct": 27.35164835164835,
+            "sm_clock_mean_mhz": 1982.4725274725274,
+            "power_mean_w": 51.54993406593407
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 44.85032687499188,
+          "cpu_s": 178.98917900000004,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.19999685582130033,
+            "foreign_cpu_cores_max": 0.8283820347016067,
+            "samples": 92,
+            "gpu_util_mean_pct": 27.17391304347826,
+            "sm_clock_mean_mhz": 1977.554347826087,
+            "power_mean_w": 51.39067391304348
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 43.35951115604257,
+          "cpu_s": 177.32205500000003,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.19308588140392843,
+            "foreign_cpu_cores_max": 1.0807421645929853,
+            "samples": 91,
+            "gpu_util_mean_pct": 27.065934065934066,
+            "sm_clock_mean_mhz": 1984.6153846153845,
+            "power_mean_w": 50.9395934065934
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 1000,
+          "wall_s": 41.65682197804563,
+          "cpu_s": 175.52062800000039,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.19705136449348185,
+            "foreign_cpu_cores_max": 0.8515642241778756,
+            "samples": 90,
+            "gpu_util_mean_pct": 26.77777777777778,
+            "sm_clock_mean_mhz": 2000.1666666666667,
+            "power_mean_w": 50.44338888888888
+          },
+          "contaminated_attempts": []
+        },
+        {
+          "frames": 374,
+          "wall_s": 12.592378647008445,
+          "cpu_s": 58.919686999999996,
+          "gpu": {
+            "clean": true,
+            "prod_lock_holders": [],
+            "new_foreign_gpu_pids": [],
+            "foreign_pids_that_grew_vram": [],
+            "resident_foreign_pids": [
+              883239
+            ],
+            "foreign_cpu_cores_mean": 0.15404072749141084,
+            "foreign_cpu_cores_max": 0.7873031045559306,
+            "samples": 34,
+            "gpu_util_mean_pct": 20.88235294117647,
+            "sm_clock_mean_mhz": 2006.0294117647059,
+            "power_mean_w": 46.61314705882353
+          },
+          "contaminated_attempts": []
+        }
+      ]
+    }
+  },
+  "checkpoint_tag": "stage7-20260928T201427",
+  "env": {
+    "gpu_name": "NVIDIA L4",
+    "tensorrt_version": "11.3.0.99",
+    "torch_version": "2.14.0+cu130",
+    "cuda_runtime": "13.0",
+    "transformers_version": "5.17.0",
+    "ultralytics_version": "8.4.155",
+    "opencv_version": "5.0.0",
+    "opencv_threads": 1,
+    "cpu_count": 16,
+    "cpu_model": "AMD EPYC 7R13 Processor",
+    "loadavg_at_start": [
+      2.056640625,
+      3.89208984375,
+      4.33349609375
+    ],
+    "python": "3.12.3"
+  },
+  "created_utc": "2026-09-28T21:33:55.098097+00:00"
+}

@@ -7,9 +7,14 @@ preserving pose accuracy? The plan is PyTorch baseline → ONNX → TensorRT
 (FP16/INT8) → video pipeline, each stage gated on the previous one being
 *correct*, not just fast. PyTorch, ONNX Runtime, and TensorRT are competing
 inference *backends* this repo benchmarks against each other -- not a
-TensorRT-only exercise. The repo is built incrementally, stage by stage;
-Stages 0-6 (through TensorRT FP16 with its batch-size sweep, GPU profiling,
-and TensorRT INT8) exist so far -- the video pipeline stages do not yet.
+TensorRT-only exercise. The repo is built incrementally, stage by stage.
+Stages 0-9 exist:
+
+- Stages 0-6 cover the pose model: PyTorch, ONNX Runtime, TensorRT FP16 with its batch-size
+  sweep, GPU profiling, and TensorRT INT8.
+- Stages 7-8 build the video pipeline around it: a synchronous version, then an asynchronous
+  one.
+- Stage 9 picks the production configuration for the real workload.
 
 ## System Architecture
 
@@ -460,8 +465,10 @@ tools already installed with zero new footprint -- TensorRT's own
   decoding -- see the "Finding 0" callout in `profiling/README.md`).
   Transfers are negligible at every batch size; **postprocessing is 25.6%
   of latency at batch=1, growing to 36.7% at batch=16** (CPU-bound, doesn't
-  benefit from GPU batching) -- a direct preview of the bottleneck Stage
-  7/8's video pipeline will hit.
+  benefit from GPU batching). It was expected to become the video pipeline's bottleneck.
+  [Stage 7](#stage-7--a-real-synchronous-video-pipeline) measured it in the full pipeline,
+  and it wasn't: pose decode is 12% of a frame, and the HF crop warp that runs before the
+  model is the bottleneck.
 - **TensorRT's own per-layer profiler** (zero new installs) shows no single
   dominant layer -- cost is evenly spread across the ViT-L backbone's 24
   transformer blocks. Each top layer's time grows ~11x for a 16x batch
@@ -663,6 +670,393 @@ python -m backends.tensorrt --precision int8 [--batch-size B]                   
 python aggregate_batch_matrix.py && python visualizations/generate_all.py
 ```
 
+## Stage 7 — a real synchronous video pipeline
+
+**The question:** Stage 5 found HF's pose decode was 26–37% of a TensorRT call and expected
+it to become the bottleneck of a video pipeline. That breakdown had no video decode, no
+detector and no crop warp. With all of them included, where does a frame's time go, and what is
+TensorRT worth end to end?
+
+### The pipeline
+
+`pipeline/sync_pipeline.py` runs each frame's stages one after another, with no overlap:
+
+1. Decode the frame with `cv2.VideoCapture`.
+2. Detect people with YOLOv8s: conf 0.35 and fp32, as in Stage 0.
+3. Crop and preprocess up to 4 people, largest first, with HF.
+4. Copy the crops to the GPU (H2D).
+5. Run the ViTPose++-L forward.
+6. Copy the heatmaps back (D2H).
+7. Decode the poses with HF.
+
+The code for each stage lives in `pipeline/stages.py` and `pipeline/cpu_stages.py`, and Stage 8
+reuses it unchanged. The detector, the crop warp and the pose decode are Stage 0's. The cap of 4
+and the largest-first rule are AutoClipping's production settings.
+
+There are three pose backends:
+
+- **PyTorch FP16:** Stage 0's model, one forward per frame, batch = people in the frame.
+- **TensorRT FP16 and TensorRT INT8:** Stage 4's and Stage 6's static-batch engines. Each frame
+  runs on the smallest of b1/b2/b4 that fits its crops, with the pad slots zeroed.
+
+The workload is the three Stage 6 held-out videos, checked against the content fingerprints in
+`calibration/real_manifest.json`: 6,092 frames of 1280×720 H.264 phone footage from cricket
+nets (one bowler clip, two stance clips). Nets footage is crowded. Most frames have 3–6 people,
+so the cap of 4 applies on 26% of frames, and an average of 3.47 people is posed per frame.
+
+### How it was measured
+
+- **Two passes, as in Stages 1 and 5:**
+  - An *instrumented* pass syncs the device and takes a timestamp at every stage boundary, to
+    give the breakdown.
+  - A *plain* pass has no intermediate syncs and gives the throughput.
+  - The instrumented stage sums match the plain pass to within 0.4% for every backend.
+- **The box is shared, and that mattered.** This L4 also runs AutoClipping's production service
+  and other people's sessions. The first full run's four attempts at the bowler clip all
+  overlapped prod jobs (and, once, a check of mine), and the run gave up. So measurements now
+  run through `pipeline/runner.py` and `pipeline/gpu_guard.py`:
+  - **Chunks:** the footage is measured in chunks of 1000 frames. Backends are interleaved
+    per chunk, so the power-capped L4's clock drift affects all of them alike.
+  - **Wait for quiet:** a chunk starts only when no prod job holds AutoClipping's GPU lock, and
+    the GPU has been idle, with under 1.5 cores of CPU used by other processes, for 15 s.
+  - **Watch while running:** the guard samples every 0.5 s. A chunk that overlapped anything is
+    discarded and re-run.
+  - **Resume:** each clean chunk is checkpointed, so an interrupted run continues with
+    `--resume`.
+  - **Give memory back:** while a prod job holds the lock, the benchmark releases its GPU memory.
+    A prod bowler job takes about 7 GB and prod runs up to 3 at once, which fills the card.
+
+### Results
+
+| ms per frame | PyTorch FP16 | TensorRT FP16 | TensorRT INT8 |
+|---|---|---|---|
+| Video decode | 0.7 | 0.7 | 0.7 |
+| YOLOv8s detect | 8.2 | 8.2 | 8.2 |
+| Crop + preprocess (HF) | 18.6 | 18.5 | 19.0 |
+| H2D + D2H copies | 0.4 | 0.4 | 0.4 |
+| ViTPose++-L forward | 22.0 | **9.8** | 7.2 |
+| Pose decode (HF) | 5.1 | 5.1 | 5.3 |
+| **Frames/s, end to end** | 18.3 | **23.5** | 24.6 |
+| vs PyTorch | 1.00x | **1.28x** | 1.35x |
+
+![Where a synchronous frame's time goes](docs/images/pipeline_sync_breakdown.png)
+
+**The headline: the pose decode is not the bottleneck; HF's crop warp is.** Pose decode is
+12% of a TensorRT frame.
+
+- **Stage 5's number holds on its own terms.** Postprocess / (H2D + forward + D2H + postprocess)
+  is 33% here, against Stage 5's 26–37%. But those stages are only a fifth of the frame.
+- **The crop warp is the largest stage:** 5.3 ms per person, 18.5 ms per frame, 43% of a
+  TensorRT frame. That is nearly twice the pose forward it feeds. The HF image processor turns
+  the whole frame into a tensor, then runs a scipy affine warp per box on the CPU.
+
+**TensorRT's speedup mostly disappears end to end.**
+
+- **Pose forward:** 2.25x faster than PyTorch, 2.8 against 6.3 ms per person.
+- **Whole frame:** only 1.28x faster, because 77% of a TensorRT frame is in stages it doesn't
+  touch.
+- **INT8** gains another 5% end to end.
+- **The GPU is mostly idle.** GPU work (YOLO's inference plus the pose copies and forward) is 38%
+  of a TensorRT frame; the rest of the time the GPU waits for the CPU, and at each GPU stage the
+  CPU waits for the GPU. That idle time is what Stage 8 targets.
+
+The pipeline is only synchronous at the level of stages. It already keeps about 4 CPU cores
+busy: FFmpeg's decode threads read ahead, which is why decode costs the main thread only
+0.7 ms per frame, and torch's intra-op threads run inside the HF preprocessing.
+
+### Pose agreement: TensorRT FP16 passes, INT8 doesn't
+
+`pipeline/compare.py` compares each backend's per-frame poses with PyTorch's, using Stage 6's
+units: keypoint error in model-input pixels, over joints the reference scores above 0.3. The
+detector doesn't depend on the pose backend, so YOLO's boxes are bit-identical across backends
+and all 21,151 crops compare like for like. The FP16 gates are Stage 6's INT8 gates tightened
+10x, set before the first full run rather than fitted to it.
+
+| vs PyTorch FP16, 351k joints | Median | p95 | Joints > 5 px | Gates |
+|---|---|---|---|---|
+| TensorRT FP16 | 0.015 px | 0.070 px | 0.02% | pass |
+| TensorRT INT8 | 0.48 px | 6.0 px | 6.2% | **fail** |
+
+INT8's error depends on crop size (`by_crop_height_px` in `results/pipeline/sync_summary.json`):
+
+| Crop height | Share of joints | INT8 median | INT8 p95 | Joints > 5 px | FP16 median |
+|---|---|---|---|---|---|
+| Under 64 px | 32% | 1.98 px | 25 px | 18.3% | 0.028 px |
+| 64–128 px | 19% | 0.32 px | 1.3 px | 0.2% | 0.011 px |
+| 128 px and up | 50% | 0.31 px | 1.3 px | 0.7% | 0.012 px |
+
+Crop height is the height of the region the crop was warped from.
+
+**INT8 works for the people in the foreground and fails for the ones in the background.**
+
+- **From 64 px up, INT8 matches Stage 6** (about 0.3 px median).
+- **Below 64 px it fails.** A third of the posed joints belong to people in the neighbouring
+  nets, whose crops are 30–50 px tall and upsampled 5–8x into the 256×192 input. Stage 6's
+  calibration and evaluation crops start at 63 px (5th percentile 107 px), so this regime was
+  never measured, and there 18% of joints move more than 5 px.
+- **Stage 6's result still holds for what it measured.** It doesn't carry over to a pipeline
+  that poses everyone in the frame.
+- **Possible fix, not built:** send crops under 64 px to FP16 and the rest to INT8.
+
+Stages 8 and 9 still measure INT8, but no configuration that uses it is eligible.
+
+```bash
+python -m pipeline.sync_pipeline            # 3 backends; --resume <tag> continues an interrupted run
+pytest tests/test_pipeline.py -v
+```
+
+Outputs: `results/pipeline/sync_{pytorch,trt-fp16,trt-int8}.json` (breakdown, throughput, the
+contention log of every chunk) and `results/pipeline/sync_summary.json` (cross-backend
+speedups and pose agreement). Per-frame boxes, keypoints and stage times are in
+`results/raw/pipeline/sync_*.npz`, which is gitignored because it is derived from private
+footage.
+
+## Stage 8 — an asynchronous, multi-worker pipeline
+
+**The question:** in Stage 7, the GPU waited for the CPU and the CPU waited for the GPU. How
+much of that can an asynchronous pipeline recover, running the same stages and producing the
+same poses?
+
+### The design
+
+`pipeline/async_pipeline.py`:
+
+```
+decode thread ──> detect thread ──> preprocess ──> pose batcher ──> pose completer ──> pose decode ──> collector
+(cv2 -> ring)     (YOLO, stream 1)   processes      (micro-batches,   (event wait,       processes
+                                     (HF warp)       streams 2 + 3)    heatmaps -> ring)  (HF DARK)
+```
+
+- **Every stage runs at once.** The stages are connected by queues, and each one starts on the
+  next frame as soon as it hands the current one on.
+- **CPU stages run in worker processes, not threads.** Measured before building on it
+  (`pipeline/gil_check.py`, 4 workers against 1):
+  - HF's crop warp scales on threads (3.7x) and slightly better on processes (3.9x): scipy's
+    affine warp releases the GIL.
+  - HF's pose decode runs *slower* on 4 threads than on 1 (0.66x), because it is GIL-bound.
+    4 processes run it 3.4x faster.
+- **Frames never go through a pipe.** A shared-memory ring (`pipeline/cpu_workers.SharedRing`)
+  holds each in-flight frame's pixels, crops and heatmaps. The queues carry only indices and
+  boxes. The ring size (64 frames) provides backpressure: the decoder blocks when every slot is
+  in use.
+- **Micro-batching across frames.** The batcher packs crops from consecutive frames into
+  batches of up to `micro_batch` (16 here), on the smallest static engine that fits. It
+  flushes a partial batch after 50 ms, or at the end of the stream. It waits for a free buffer
+  *before* choosing a batch's crops, so crops that arrive while the GPU is busy join that
+  batch instead of it launching half-empty.
+- **Pinned memory and three CUDA streams:**
+  - H2D copies go on a copy stream; the forward and D2H go on a pose stream, ordered by events.
+  - Two buffer sets are in flight, each with its own TensorRT execution context, so batch k+1's
+    upload overlaps batch k's forward.
+  - YOLO has a third stream of its own.
+- **Detection without device-wide syncs.** Ultralytics times each predictor stage with a
+  profiler that calls `torch.cuda.synchronize()`. That syncs the whole device, so in a
+  multi-stream pipeline every detection would wait for the pose stream.
+  `stages.detect_frames()` calls the predictor's own `preprocess`/`inference`/`postprocess`
+  without those timers.
+- **Two detector variants are measured.**
+  - *YOLO per frame:* boxes are bit-identical to Stage 7's.
+  - *YOLO on 4 frames per call:* 2.5x cheaper per frame on its own (2.8 against 7.0 ms). A
+    batched convolution rounds differently, so boxes move by 0.006 px at the median and
+    0.17 px at p99.
+
+### How it was measured
+
+Measurement is paired per chunk. Each 1000-frame chunk runs Stage 7's plain synchronous pass
+and then each asynchronous variant, for each backend, in one process, under the same guard as
+Stage 7. No chunk was discarded.
+
+The poses are compared with that same chunk's synchronous run, using Stage 7's gates for the
+backend's precision:
+
+- *YOLO per frame:* exactly, since the boxes are identical.
+- *Batched YOLO:* with a 0.5 px box tolerance. On 0.7% of frames the batched detector picks a
+  different set of boxes, because two people of near-equal size swap places in the
+  largest-first order, or the 4th and 5th swap. Those frames are counted, not compared.
+
+### Results
+
+| Frames/s | Synchronous (Stage 7) | Async, YOLO per frame | Async, YOLO ×4 per call |
+|---|---|---|---|
+| PyTorch FP16 | 18.2 | 56.3 (3.09x) | 57.0 (3.13x) |
+| TensorRT FP16 | 23.3 | 55.8 (2.39x) | **68.0 (2.91x)** |
+| TensorRT INT8 (fails Stage 7's pose gates) | 24.4 | 101.1 (4.14x) | 113.2 (4.64x) |
+
+![Synchronous vs asynchronous pipeline](docs/images/pipeline_async_speedup.png)
+
+**The headline: with TensorRT FP16 the asynchronous pipeline is 2.9x the synchronous one**
+(68.0 vs 23.3 frames/s) on the same footage. Its poses are within 0.021 px (median) of
+Stage 7's.
+
+What each step bought, and what it left as the limit:
+
+- **Overlap plus CPU worker pools, YOLO per frame: 2.4x.** HF's crop warp and pose decode drop
+  out of the picture: 6 preprocess workers are 23–31% busy and 2 pose-decode workers 16–21%.
+  The limit is now the single detection thread, 99% busy. YOLO takes about 18 ms per frame
+  there, against 7 ms on its own, because it shares the GPU with the pose stream.
+- **Batching YOLO over 4 frames: another 22%** (55.8 → 68.0 frames/s). Now a pose batch is
+  in flight 98% of the time and the detect thread is 97% busy, and NVML reports the GPU
+  running a kernel 100% of the time.
+  The detect thread spends most of its time waiting for its own kernels to get past the pose
+  stream's. The limit is the one GPU that detection and pose share, which is the regime where
+  the pose backend and micro-batch matter again. Stage 9 tunes them.
+- **PyTorch doesn't gain from batching YOLO.** With per-frame YOLO it matches TensorRT
+  (56.3 vs 55.8). Both are detection-bound there, and TensorRT's large fused kernels leave
+  YOLO less room on the GPU than PyTorch's many small ones. With YOLO batched, PyTorch stays
+  where it was: its batcher thread spends 95% of its time in Python launching the HF model's
+  kernels, and its pose stream is 99% busy.
+- **INT8 shows the headroom behind the pose forward:** 113 frames/s. But INT8 fails the
+  pipeline's pose gates (Stage 7), so it isn't an option as it stands.
+
+![What the asynchronous pipeline waits for](docs/images/pipeline_async_busy.png)
+
+**Latency is the price of throughput mode.** A frame takes about 1 s from decode to decoded
+poses (p50 971 ms, p95 1068 ms, TensorRT FP16), against 43 ms in the synchronous pipeline. The
+work per frame didn't grow. Nothing slows the decoder, so it fills the 64-frame ring, and every
+frame then queues behind the ones ahead of it: 64 frames / 68.0 frames/s ≈ 0.94 s. For offline
+video jobs like AutoClipping's this doesn't matter. A live deployment would shrink the ring.
+
+| Pose agreement vs the same chunk's synchronous run | Frames compared | Boxes identical | Median | p95 |
+|---|---|---|---|---|
+| TensorRT FP16, YOLO per frame | 6,092 / 6,092 | 6,092 | 0.014 px | 0.056 px |
+| TensorRT FP16, YOLO ×4 | 6,048 / 6,092 | 33 | 0.021 px | 0.124 px |
+| PyTorch FP16, YOLO per frame | 6,092 / 6,092 | 6,092 | 0.004 px | 0.013 px |
+| PyTorch FP16, YOLO ×4 | 6,055 / 6,092 | 1,259 | 0.011 px | 0.095 px |
+
+With identical boxes, the small differences come from the pose forward running at a different
+batch size. With batched YOLO they also include the effect of crops shifted by a fraction of a
+pixel.
+
+```bash
+python -m pipeline.gil_check --video <any 720p job video>   # threads vs processes
+python -m pipeline.async_pipeline --backends trt-fp16 pytorch trt-int8
+pytest tests/test_pipeline.py -v
+```
+
+Outputs: `results/pipeline/async_{trt-fp16,pytorch,trt-int8}.json` (per variant: throughput,
+latency, stage busy shares, queue depths, pose agreement), `results/pipeline/async_summary.json`,
+`results/pipeline/gil_check.json`, and per-frame outputs in `results/raw/pipeline/async_*.npz`
+(gitignored).
+
+## Stage 9 — the production configuration
+
+**The question:** which pose backend and micro-batch give the most useful throughput on the
+real workload? Its crop count per frame differs from the benchmark footage's. "Useful" counts
+real frames and crops, never padded engine slots.
+
+### The real workload
+
+`pipeline/workload_profile.py` runs the pipeline's own detector and person selection on every
+5th frame of every AutoClipping job video on this box:
+
+- **Videos:** 82 distinct videos, because 15 of the 97 jobs are byte-identical re-uploads.
+- **Frames:** 26,235 sampled frames out of 131,013 decoded.
+- **What is committed:** only aggregates. Per-video rows are gitignored.
+
+![People posed per frame on the real workload](docs/images/workload_crops.png)
+
+- **2.49 people are posed per frame on average,** against 3.47 in the benchmark footage.
+  - Bowler jobs average 2.68; their nets are crowded, and 36% of their frames have more than
+    4 people (up to 22 detected).
+  - Batsman (stance) jobs average 1.94.
+  - The median video poses 2.0 people per frame, the upper-quartile video 2.7.
+- **Stage 7's frame-at-a-time batching would waste 5.7% of engine slots here,** because 3-person
+  frames run on the b4 engine. Cross-frame micro-batching doesn't pad that way.
+- **Resolution mix:** 55 videos are 1280×720, 19 are 1920×1080, 7 are portrait and 1 is 4K.
+  Everything below was measured on 1280×720 footage.
+
+### The sweep
+
+`pipeline/production_config.py` runs Stage 8's pipeline (YOLO on 4 frames per call) at every
+static engine batch size for each backend. It uses the same chunked, guarded methodology, with
+the 15 configurations interleaved per chunk; no chunk was discarded. Each configuration's poses
+are compared with Stage 7's synchronous PyTorch run.
+
+| Frames/s at pose micro-batch | 1 | 2 | 4 | 8 | 16 |
+|---|---|---|---|---|---|
+| TensorRT FP16 | 48.6 | 63.1 | **69.4** | 66.4 | 65.5 |
+| PyTorch FP16 | 12.7 | 22.8 | 39.2 | **56.1** | 55.5 |
+| TensorRT INT8 (fails its pose gates at every size) | 53.3 | 75.4 | 95.3 | 108.7 | 110.7 |
+
+Every FP16 configuration is within 0.020 px (median) of the PyTorch reference. INT8 is at
+0.48 px median and 6.0 px p95, as in Stage 7.
+
+<p align="center"><img src="docs/images/pipeline_batch_sweep.png" alt="Throughput vs pose micro-batch" width="49%"> <img src="docs/images/pipeline_batch_latency.png" alt="Latency vs pose micro-batch" width="49%"></p>
+
+- **TensorRT FP16 peaks at micro-batch 4, not 16.** In isolation the b16 engine processes the
+  most crops per second (Stage 4: 311 vs 295). Here the GPU is shared with YOLO:
+  - A b16 batch is about 50 ms of pose kernels, and YOLO's kernels wait behind them. The detect
+    thread is 97% busy at b16, against 74% at b4.
+  - Shorter batches let the two interleave.
+  - Micro-batch 4 also has the lowest latency. It needs only the b1/b2/b4 engines: 2.5 GB,
+    against 4.2 GB for the full ladder up to b16.
+- **PyTorch needs micro-batch 8.** Its batcher thread is 99–100% busy up to b8, dispatching
+  the HF model's kernels from Python, so each forward has a fixed cost and only bigger batches
+  amortize it. At its best, PyTorch reaches 56 frames/s, and TensorRT FP16's best is 1.24x that.
+- **INT8 would add 60% on top of TensorRT FP16** (110.7 vs 69.4 frames/s), but it fails the
+  pipeline's pose gates (Stage 7).
+- **The flush timeout doesn't matter.** 10, 50 and 200 ms give 69.5, 69.5 and 69.2 frames/s,
+  with no padding: in steady state a 4-crop batch fills long before any timeout fires.
+- **Latency is set by the ring:** about 64 frames / throughput. p95 is 1.05 s at the
+  recommended setting.
+
+### Projected onto the workload
+
+The benchmark chunks all sit near 3.5 crops per frame, so they can't show how throughput moves
+with crop count. Phase 2 re-runs the best configuration of each eligible backend with the
+person cap at 1, 2, 3 and 4, on the same frames, interleaved per chunk. The cap-4 re-run
+reproduces phase 1 to 0.1% (69.37 vs 69.42 frames/s).
+
+| Person cap | 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| Crops per frame | 1.00 | 1.98 | 2.86 | 3.47 |
+| TensorRT FP16, micro-batch 4 | 178.7 | 110.5 | 81.9 | 69.4 |
+| PyTorch FP16, micro-batch 8 | 153.2 | 91.1 | 66.7 | 56.0 |
+
+At one person per frame TensorRT is detection-bound: the detect thread is 99% busy at about
+179 frames/s. Reading the workload's crop counts off these curves (interpolated, none
+extrapolated) gives:
+
+| Workload slice | Crops per frame | TensorRT FP16, b4 | PyTorch FP16, b8 |
+|---|---|---|---|
+| All 82 job videos | 2.49 | **91.8 frames/s** | 75.1 frames/s |
+| Bowler jobs | 2.68 | 86.6 | 70.7 |
+| Batsman jobs | 1.94 | 112.3 | 92.7 |
+| Median video | 2.02 | 108.7 | 89.6 |
+
+### The recommendation
+
+```
+pose backend   TensorRT FP16, the Stage 4 engines b1 + b2 + b4 (2.5 GB)
+micro-batch    4 crops, packed across frames; partial batches flushed after 50 ms
+detector       YOLOv8s, 4 frames per call, on its own CUDA stream
+CPU workers    6 crop/preprocess + 2 pose-decode processes (at most 31% / 21% busy)
+frame ring     64 frames in flight; per-frame latency ~ 64 / throughput
+```
+
+- **Expected throughput:** about 92 frames/s on the fleet's mix at 1280×720 (87 on bowler jobs,
+  112 on batsman jobs).
+- **On the benchmark footage:** 2.95x Stage 7's synchronous TensorRT pipeline (69.4 vs
+  23.5 frames/s). The 5,374-frame bowler clip takes 79 s instead of 233 s.
+- **Against PyTorch:** 1.22x the best PyTorch configuration.
+- **Measured only at 720p:** 1080p, 4K and portrait videos (a third of the fleet) are not
+  measured (see the roadmap).
+
+This is the configuration for *this repo's* pipeline, which keeps HF's CPU pre- and
+post-processing. AutoClipping's production pipeline differs. It already runs 64 crops per
+forward through a MoE-fused PyTorch model, with a GPU crop warp and decode, and there an FP16
+engine was output-neutral but 1.00x (Stage 6). The ranking here doesn't transfer to it without
+its own measurement.
+
+```bash
+python -m pipeline.workload_profile            # the fleet's people per frame (~6 min)
+python -m pipeline.production_config           # sweep + projection + recommendation (~55 min)
+```
+
+Outputs: `results/pipeline/workload_profile.json` and `results/pipeline/production_config.json`
+(sweep rows with pose agreement, timeout sweep, crops-per-frame curves, projections,
+recommendation).
+
 ## Key Findings
 
 1. ViTPose++-L is the dominant stage in the measured single-image pipeline
@@ -764,9 +1158,55 @@ python aggregate_batch_matrix.py && python visualizations/generate_all.py
     so it isn't enabled there. The FP16 engine was output-neutral but gave
     1.00x. Isolated-model speedups are only a proxy for this, in both
     directions.
-23. **The async video pipeline has NOT yet been built** and is not
-    represented as completed anywhere in this repo. INT8 is validated for
-    MoE expert 0 (COCO) only.
+23. **In a real synchronous video pipeline, pose decoding is not the
+    bottleneck; HF's crop warp is** (Stage 7). On 6,092 frames of nets
+    footage with 3.5 people posed per frame, the TensorRT FP16 frame is:
+    crop + preprocess 43%, pose forward 23%, YOLO 19%, pose decode 12%,
+    decode and copies 3%. Stage 5's postprocess share holds within the
+    stages it measured (33% here), but those are a fifth of the frame.
+24. **TensorRT's 2.25x faster pose forward is 1.28x end to end in the
+    synchronous pipeline** (23.5 vs 18.3 frames/s), because 77% of the
+    frame is in stages it doesn't touch. The GPU is busy 38% of the time.
+25. **Stage 6's INT8 fails in the video pipeline, because it poses the
+    background too.** People in the neighbouring nets give 30-50 px crops,
+    below the smallest crop in Stage 6's calibration and evaluation corpus
+    (63 px). They carry a third of the joints, and there INT8 moves 18% of
+    them by more than 5 px (p95 25 px). From 64 px up, INT8 matches Stage 6
+    (0.31 px median). TensorRT FP16 agrees with PyTorch at 0.015 px median
+    on every crop size.
+26. **An asynchronous pipeline is 2.9x the synchronous one with TensorRT
+    FP16** (68.0 vs 23.3 frames/s, same footage, paired per chunk), with
+    poses within 0.021 px of Stage 7's (Stage 8). Stages overlap through
+    queues and a shared-memory ring; CPU stages run in worker processes;
+    crops are micro-batched across frames; and detection and pose run on
+    separate CUDA streams. Batching YOLO over 4 frames supplied about a
+    quarter of that gain. The limit is then the one GPU shared by detection and pose.
+27. **Two library behaviours shaped Stage 8.** HF's pose decode is
+    GIL-bound (4 threads run it at 0.66x of one thread, 4 processes at 3.4x).
+    Ultralytics' predictor calls a device-wide `torch.cuda.synchronize()`
+    around every stage, which serializes a multi-stream pipeline;
+    `stages.detect_frames()` calls the same predictor methods without it.
+28. **The shared box has to be measured around.** Production AutoClipping
+    jobs and other sessions share this L4 and its CPUs. A first full Stage 7
+    run lost every attempt at a 5-minute unit to overlaps. Chunked,
+    checkpointed units, run only when the box is quiet, re-run when anything
+    overlapped, and releasing GPU memory while a prod job runs
+    (`pipeline/runner.py`, `pipeline/gpu_guard.py`), made the runs both
+    clean and safe for prod.
+29. **The production configuration for this pipeline is TensorRT FP16 at
+    pose micro-batch 4** (Stage 9). It runs at 69.4 frames/s on the
+    benchmark footage, 2.95x Stage 7's synchronous TensorRT pipeline, and a
+    projected 92 frames/s on the fleet's mix, 1.22x the best PyTorch
+    configuration (micro-batch 8). Micro-batch 4 beats 16 in the pipeline
+    although b16 is the faster engine alone: shorter pose batches let YOLO's
+    kernels interleave on the shared GPU. It also has the lowest latency and
+    needs 2.5 GB of engines instead of 4.2. The flush timeout (10-200 ms)
+    makes no difference.
+30. **The real workload poses fewer people than the benchmark footage**: 2.49
+    per frame across 82 job videos (bowler 2.68, batsman 1.94), against 3.47.
+    Throughput depends mostly on that number: 179 frames/s at one person per
+    frame (detection-bound), 69 at 3.47. 28% of the fleet's frames have more
+    people than the cap of 4.
 
 ## Roadmap
 
@@ -776,14 +1216,29 @@ python aggregate_batch_matrix.py && python visualizations/generate_all.py
   ([details](#in-production-the-moe-fused-engine-end-to-end)). Open
   follow-ups: validating other experts if they're ever used, and a
   pose-quality check against human labels rather than against FP16.
-- **Stage 7** — a real synchronous video pipeline (decode → YOLO → crop →
-  TensorRT → pose decode) to see whether Stage 5's postprocessing-share
-  finding actually becomes the bottleneck once decode+detection are added.
-- **Stage 8** — asynchronous multi-worker pipeline (decoupled queues,
-  micro-batching, pinned memory + dual CUDA streams), benchmarked against
-  Stage 7's synchronous baseline.
-- **Stage 9** — find the actual production configuration (batch size that
-  maximizes useful throughput given a real workload's crop-count distribution).
+- ~~**Stage 7** — a real synchronous video pipeline~~ — done, see
+  [Stage 7](#stage-7--a-real-synchronous-video-pipeline).
+- ~~**Stage 8** — asynchronous multi-worker pipeline~~ — done, see
+  [Stage 8](#stage-8--an-asynchronous-multi-worker-pipeline).
+- ~~**Stage 9** — the production configuration~~ — done, see
+  [Stage 9](#stage-9--the-production-configuration).
+- Open follow-ups, in the order they'd pay:
+  - **Send small crops to FP16 and the rest to INT8.** INT8 fails only on crops under 64 px
+    (Stage 7). Routing those to FP16 would let INT8's much cheaper forward pay in the
+    GPU-bound async pipeline, where INT8 ran at 113 frames/s against 68. That needs its own
+    pose gate.
+  - **Make detection cheaper on the GPU.** YOLOv8s runs fp32 through PyTorch and shares the
+    GPU with the pose forward. A TensorRT or FP16 detector would raise the async ceiling, but
+    it changes the detections, so it needs its own gate.
+  - **Validate on the rest of the workload.** Stages 7-9 measured 1280×720 footage; 27 of the 82
+    job videos are 1080p, 4K or portrait. HF's crop warp converts the whole frame to a tensor,
+    so its cost grows with resolution. The async pipeline's preprocess workers were 23–52%
+    busy, which leaves room, but that is unmeasured.
+  - Replace the HF crop warp and DARK decode with vectorized or GPU versions, as AutoClipping's
+    `fast` codec does. That isn't needed for async throughput, but it would give back most of
+    the CPU the worker pools use: 8 processes, 2–4 cores busy.
+  - From Stage 6: validating the other MoE experts if they're ever used, and a pose-quality
+    check against human labels rather than against FP16.
 
 ## Repo conventions
 

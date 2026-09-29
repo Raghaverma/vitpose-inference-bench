@@ -71,6 +71,13 @@ a direct preview of the Amdahl's-Law bottleneck Stage 7/8's video pipeline
 will hit: pushing batch size up to buy GPU throughput doesn't buy anything
 if a CPU-bound, unbatched postprocessing step is running in between.
 
+**Measured later (Stage 7, main README):** the Amdahl's-Law effect was real, but it came from
+another stage. In the full synchronous video pipeline, on real footage with 3.5 people per
+frame, the pose decode is 12% of a TensorRT frame; postprocess / (H2D + exec + D2H +
+postprocess) is 33%, in line with the numbers above. The bottleneck is the HF crop warp
+*before* the model (43% of the frame), plus YOLO detection (19%). Stage 8 then moves both CPU
+stages into worker processes.
+
 Note the exec column here (4.641ms at batch=1, 40.975ms at batch=16) is
 modestly lower than Stage 4's isolated engine-only numbers (5.061ms,
 51.478ms) — a ~8-16% difference most likely reflecting ordinary run-to-run
